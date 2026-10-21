@@ -26,3 +26,6 @@ Homestead.yaml
 Thumbs.db
 /database/*.sqlite
 /database/*.sqlite-journal
+# CloudLinux PHP Selector writes these into the document root on cPanel.
+/php.ini
+/.user.ini

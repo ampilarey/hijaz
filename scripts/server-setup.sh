@@ -53,8 +53,11 @@ if [[ -f "$ROOT/artisan" ]]; then
   echo "already a checkout — leaving it as is"
 elif [[ -d "$ROOT" ]]; then
   # cPanel creates the subdomain's document root as an empty folder, often
-  # with only cgi-bin in it. Anything else is somebody's work: stop.
-  LEFTOVER=$(find "$ROOT" -mindepth 1 -maxdepth 1 ! -name cgi-bin ! -name .well-known ! -name .htaccess | head -5)
+  # with only cgi-bin in it, and CloudLinux PHP Selector adds php.ini and
+  # .user.ini for the domain's PHP settings. Anything else is somebody's
+  # work: stop.
+  LEFTOVER=$(find "$ROOT" -mindepth 1 -maxdepth 1 \
+    ! -name cgi-bin ! -name .well-known ! -name .htaccess ! -name php.ini ! -name .user.ini | head -5)
   if [[ -n "$LEFTOVER" ]]; then
     die "$ROOT exists and is not empty:
 $LEFTOVER
@@ -62,8 +65,13 @@ Move it aside (mv \"$ROOT\" \"$ROOT.old\") if it is not needed, then re-run."
   fi
   ASIDE="$ROOT.cpanel-default.$(date +%Y%m%d%H%M%S)"
   mv "$ROOT" "$ASIDE"
-  echo "moved cPanel's empty default folder to $ASIDE"
+  echo "moved cPanel's default folder to $ASIDE"
   git clone --branch main "$REPO_URL" "$ROOT"
+  # Keep the PHP Selector's settings: .user.ini applies to this directory
+  # and everything below it, which includes the new public/ document root.
+  for ini in php.ini .user.ini; do
+    [[ -f "$ASIDE/$ini" ]] && cp -p "$ASIDE/$ini" "$ROOT/$ini" && echo "kept $ini"
+  done
 else
   git clone --branch main "$REPO_URL" "$ROOT"
 fi
