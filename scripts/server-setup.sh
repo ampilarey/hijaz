@@ -52,15 +52,21 @@ case "$DB_PASSWORD" in
 esac
 # Prove the login works before anything is written. The values travel as
 # environment variables, so no quoting can mangle them on the way.
-DB_DATABASE="$DB_DATABASE" DB_USERNAME="$DB_USERNAME" DB_PASSWORD="$DB_PASSWORD" php -r '
-  try {
+# (A temp file rather than php -r: cPanel's php wrapper warns about
+# multi-line -r code.)
+PHPTMP=$(mktemp -t hijaz-setup.XXXXXX.php)
+trap 'rm -f "$PHPTMP"' EXIT
+cat > "$PHPTMP" <<'PHP'
+<?php
+try {
     new PDO("mysql:host=127.0.0.1;port=3306;dbname=".getenv("DB_DATABASE"), getenv("DB_USERNAME"), getenv("DB_PASSWORD"));
     echo "database login ok: ".getenv("DB_USERNAME")."@127.0.0.1/".getenv("DB_DATABASE")."\n";
-  } catch (Throwable $e) {
+} catch (Throwable $e) {
     fwrite(STDERR, $e->getMessage()."\n");
     exit(1);
-  }
-' || die "MySQL refused that user/password for database $DB_DATABASE.
+}
+PHP
+DB_DATABASE="$DB_DATABASE" DB_USERNAME="$DB_USERNAME" DB_PASSWORD="$DB_PASSWORD" php "$PHPTMP" || die "MySQL refused that user/password for database $DB_DATABASE.
        Check in cPanel → MySQL® Databases that the user is listed under the
        database's Privileged Users, then set a fresh password there (Current
        Users → Change Password) and re-run with it. Pasting the password from
@@ -113,7 +119,8 @@ else
 fi
 SET_SECRET=""
 grep -qE '^DEPLOY_WEBHOOK_SECRET=.{16,}' .env || SET_SECRET=$(openssl rand -hex 32)
-FRESH="$FRESH" HOST="$HOST" DB_DATABASE="$DB_DATABASE" DB_USERNAME="$DB_USERNAME" DB_PASSWORD="$DB_PASSWORD" SET_SECRET="$SET_SECRET" php -r '
+cat > "$PHPTMP" <<'PHP'
+<?php
   $values = [
     "DB_CONNECTION" => "mysql",
     "DB_HOST" => "127.0.0.1",
@@ -151,7 +158,8 @@ FRESH="$FRESH" HOST="$HOST" DB_DATABASE="$DB_DATABASE" DB_USERNAME="$DB_USERNAME
     }
   }
   file_put_contents(".env", implode("\n", $lines)."\n");
-'
+PHP
+FRESH="$FRESH" HOST="$HOST" DB_DATABASE="$DB_DATABASE" DB_USERNAME="$DB_USERNAME" DB_PASSWORD="$DB_PASSWORD" SET_SECRET="$SET_SECRET" php "$PHPTMP"
 grep -qE '^APP_KEY=.+' .env || php artisan key:generate --force
 echo ".env written"
 
