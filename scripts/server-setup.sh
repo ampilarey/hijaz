@@ -47,6 +47,24 @@ say "2/8 database credentials"
 ask DB_DATABASE "MySQL database name (e.g. rihla_hijaz)"
 ask DB_USERNAME "MySQL user (e.g. rihla_hijaz)"
 ask DB_PASSWORD "MySQL password" secret
+case "$DB_PASSWORD" in
+  *\'*|*$'\n'*) die "the MySQL password contains a single quote or a line break, which .env cannot hold safely. In cPanel → MySQL® Databases → Current Users → $DB_USERNAME → Change Password, generate a new one and re-run." ;;
+esac
+# Prove the login works before anything is written. The values travel as
+# environment variables, so no quoting can mangle them on the way.
+DB_DATABASE="$DB_DATABASE" DB_USERNAME="$DB_USERNAME" DB_PASSWORD="$DB_PASSWORD" php -r '
+  try {
+    new PDO("mysql:host=127.0.0.1;port=3306;dbname=".getenv("DB_DATABASE"), getenv("DB_USERNAME"), getenv("DB_PASSWORD"));
+    echo "database login ok: ".getenv("DB_USERNAME")."@127.0.0.1/".getenv("DB_DATABASE")."\n";
+  } catch (Throwable $e) {
+    fwrite(STDERR, $e->getMessage()."\n");
+    exit(1);
+  }
+' || die "MySQL refused that user/password for database $DB_DATABASE.
+       Check in cPanel → MySQL® Databases that the user is listed under the
+       database's Privileged Users, then set a fresh password there (Current
+       Users → Change Password) and re-run with it. Pasting the password from
+       a browser can also drop characters; retype it if in doubt."
 
 say "3/8 checkout at $ROOT"
 if [[ -f "$ROOT/artisan" ]]; then
@@ -82,35 +100,60 @@ say "4/8 composer install"
 composer install --no-dev --optimize-autoloader --no-interaction
 
 say "5/8 .env"
+# Written by PHP rather than sed so no character in a value needs escaping.
+# A fresh .env starts from .env.example; an existing one keeps everything it
+# has (APP_KEY, the webhook secret, anything added by hand) and only the
+# database values given to this run are replaced.
+FRESH=0
 if [[ -f .env ]]; then
-  echo ".env exists — keeping it (edit by hand if the database changed)"
+  echo ".env exists — keeping it, updating the database values"
 else
   cp .env.example .env
-  SECRET=$(openssl rand -hex 32)
-  set_env() { # set_env KEY VALUE
-    local key="$1" value="$2"
-    value=${value//\\/\\\\}; value=${value//&/\\&}; value=${value//|/\\|}
-    if grep -qE "^#? ?${key}=" .env; then
-      sed -i -E "s|^#? ?${key}=.*|${key}=${value}|" .env
-    else
-      echo "${key}=${value}" >> .env
-    fi
-  }
-  set_env APP_ENV production
-  set_env APP_DEBUG false
-  set_env APP_URL "https://$HOST"
-  set_env LOG_LEVEL warning
-  set_env DB_CONNECTION mysql
-  set_env DB_HOST 127.0.0.1
-  set_env DB_PORT 3306
-  set_env DB_DATABASE "$DB_DATABASE"
-  set_env DB_USERNAME "$DB_USERNAME"
-  set_env DB_PASSWORD "\"$DB_PASSWORD\""
-  set_env DEPLOY_WEBHOOK_SECRET "$SECRET"
-  set_env DEPLOY_ALLOWED_HOSTS "$HOST"
-  php artisan key:generate --force
-  echo ".env written"
+  FRESH=1
 fi
+SET_SECRET=""
+grep -qE '^DEPLOY_WEBHOOK_SECRET=.{16,}' .env || SET_SECRET=$(openssl rand -hex 32)
+FRESH="$FRESH" HOST="$HOST" DB_DATABASE="$DB_DATABASE" DB_USERNAME="$DB_USERNAME" DB_PASSWORD="$DB_PASSWORD" SET_SECRET="$SET_SECRET" php -r '
+  $values = [
+    "DB_CONNECTION" => "mysql",
+    "DB_HOST" => "127.0.0.1",
+    "DB_PORT" => "3306",
+    "DB_DATABASE" => getenv("DB_DATABASE"),
+    "DB_USERNAME" => getenv("DB_USERNAME"),
+    "DB_PASSWORD" => getenv("DB_PASSWORD"),
+  ];
+  if (getenv("FRESH") === "1") {
+    $values += [
+      "APP_ENV" => "production",
+      "APP_DEBUG" => "false",
+      "APP_URL" => "https://".getenv("HOST"),
+      "LOG_LEVEL" => "warning",
+      "DEPLOY_ALLOWED_HOSTS" => getenv("HOST"),
+    ];
+  }
+  if (getenv("SET_SECRET") !== "") {
+    $values["DEPLOY_WEBHOOK_SECRET"] = getenv("SET_SECRET");
+  }
+  $lines = file(".env", FILE_IGNORE_NEW_LINES);
+  foreach ($values as $key => $value) {
+    // Single quotes: Laravel reads the value literally, so $ and \ are safe.
+    $line = $key."=\x27".$value."\x27";
+    $found = false;
+    foreach ($lines as $i => $existing) {
+      if (preg_match("/^#? ?".preg_quote($key, "/")."=/", $existing)) {
+        $lines[$i] = $line;
+        $found = true;
+        break;
+      }
+    }
+    if (! $found) {
+      $lines[] = $line;
+    }
+  }
+  file_put_contents(".env", implode("\n", $lines)."\n");
+'
+grep -qE '^APP_KEY=.+' .env || php artisan key:generate --force
+echo ".env written"
 
 say "6/8 database"
 php artisan migrate --force
