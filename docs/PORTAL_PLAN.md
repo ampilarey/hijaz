@@ -1,7 +1,8 @@
 # Hijaz Umrah Portal: the plan
 
-**Status:** proposal for the owner to approve. Nothing in it is built yet.
-**Date:** 2026-10-21
+**Status:** approved in direction by the owner on 2026-10-21 (see "Owner's
+answers" at the end). Nothing in it is built yet.
+**Date:** 2026-10-21, revised the same day after the owner's answers
 **Reads:** `ampilarey/rihla` at `fde6cc9` (Rihla Travels' app), this repo at the commit this file was added in.
 
 The portal is an internal tool for Hijaz Hajj & Umrah staff: it runs the Umrah
@@ -69,7 +70,9 @@ Everything in that list is new work in this plan.
 
 ### D-1. A separate application in this repository, ported from Rihla
 
-Hijaz is a different company with its own data, staff and bank accounts. It
+Hijaz is a different company with its own data, staff and bank accounts; the
+only thing shared with Rihla is the hosting account and the `rihla.mv`
+subdomain (confirmed by the owner). It
 will not be a tenant inside Rihla (Rihla's own ADRs defer multi-tenancy and its
 tenant model is for guesthouse hosts), and a shared Composer package between
 two repos with one owner would cost more than it saves. Code is copied module
@@ -93,23 +96,53 @@ last year's set-up with shifted dates, is simpler to use and to build. If
 Hijaz later needs a public catalogue, a `packages` layer can be added above
 without touching bookings.
 
-### D-4. Money: integer minor units, three currencies, MVR as the reporting base
+### D-4. Money: integer minor units, three currencies, each used where Hijaz really uses it
 
 Every amount is an integer in minor units (laari, cents, halalas) beside a
 3-letter currency column, as in Rihla. Three currencies are first-class:
-**MVR, USD, SAR**. Each trip has a price currency. A booking inherits it.
+**MVR, USD, SAR**, and the owner described exactly how each is used:
 
-Rihla refuses a payment in another currency. Hijaz cannot: pilgrims pay MVR
-for USD-priced trips and hand over USD cash. So:
+| Money | Currency | Where |
+| --- | --- | --- |
+| The trip package price | MVR | Paid in the Maldives, bank transfer or cash at the office |
+| A private room (single occupancy) upgrade | USD | Paid by the pilgrim in USD |
+| Additional trips from Makkah or Madinah (Taif, Jeddah, Ziyarah) | SAR | Paid in cash in Saudi Arabia, to the group leader |
+| Hijaz buying USD with MVR at the bank | MVR out, USD in | Company side, before the trip |
+| Telegraphic transfers to hotels, airlines, agents | USD or MVR out | Company side |
+| Expenses on the ground | SAR | Paid from SAR cash carried by staff |
 
-- `exchange_rates` holds dated rates (`from`, `to`, `rate`, `as_of`, `source`,
-  `set_by`). Staff enter them; nothing is fetched automatically.
-- A payment keeps its own currency and amount forever. When Finance verifies
-  it, the rate in force is copied onto the payment (`rate_snapshot`) and a
-  `settled_minor` in the booking's currency is stored. The booking's paid total
-  is the sum of `settled_minor`.
-- Reports show each currency separately **and** an MVR total using the rate on
-  the transaction date. The rate used is always printed.
+So the model has to carry more than one currency on one booking, and more
+than one currency in one company account book. The rules:
+
+- **A booking line has its own currency.** The package lines are MVR, a
+  private-room line is USD. The booking keeps a balance **per currency**
+  ("MVR 28,500 and USD 300 due"), and the invoice prints them as separate
+  totals. Nothing is added across currencies on an invoice.
+- **A payment keeps its own currency and amount forever** and is allocated to
+  the booking's balance in that same currency by default. When a pilgrim pays
+  MVR for the USD room (or USD for the MVR package), Finance allocates it
+  across currencies at that moment and the rate used is snapshotted on the
+  allocation. The paid total per currency is re-derived from allocations under
+  a row lock (Rihla's ledger pattern).
+- **Excursion money is SAR, collected in Saudi.** Excursion bookings are SAR
+  payables; the group leader records cash received on a phone (offline-capable,
+  synced later), the pilgrim gets a receipt, and the SAR goes into the leader's
+  cash account until it is handed over to Finance.
+- **The company's books are a multi-currency cash book.** There is an
+  **account** for every place money sits: bank MVR, bank USD, office cash MVR,
+  office cash USD, each leader's SAR cash on a trip. Every ledger entry names
+  its account. A **currency purchase** (USD bought with MVR) is one entry that
+  moves money out of one account and into another at the *actual* rate the
+  bank gave; a **TT** is an expense entry out of the bank USD or MVR account
+  with the beneficiary, charges and reference.
+- **Two kinds of rate.** The `exchange_rates` table (staff-entered, dated) is
+  only for reporting and for allocating a pilgrim's cross-currency payment.
+  The company's own purchases record the rate they really got, and reports show
+  both: what the bank charged Hijaz, and what the trip cost in MVR at that
+  realised rate. No rate is ever fetched automatically and no stored conversion
+  is ever recalculated when a rate changes.
+- **MVR is the reporting base.** Every report shows each currency on its own
+  and an MVR total, and prints the rates it used.
 
 ### D-5. Phone first, measured
 
@@ -128,27 +161,54 @@ Rihla already has them:
 - Telegram is the fastest phone interface of all and gets the same features
   where they fit a chat (section 4, item 21).
 
-### D-6. OCR by a vision model, never trusted
+### D-6. Reading documents on the server first, never trusted, cloud only as an optional upgrade
 
-ID cards, passports, bank slips and photos are read by **Claude's vision API**
-(Rihla already has an `AnthropicProvider` with key, model, daily cap and
-timeout config; it is extended to send images). Reading is a proposal:
+The owner asked for OCR **on the server** rather than sending images to a
+cloud model. That is possible, with limits that should be understood up front.
 
-- The result is stored in `document_extractions` with the raw response, the
-  model, per-field confidence, and `status = proposed`.
-- Staff see the image and the proposed fields side by side, correct them, and
-  accept. Only then do the fields reach the pilgrim's record, and only then is
-  the document `verified`. Nothing is written from an unaccepted extraction.
-- Passports are additionally checked by the **MRZ check digits**, computed
-  locally. A passport whose MRZ fails its own checksum is flagged before a
-  human looks at it.
-- If the API is down or no key is set, the same screen works with empty
-  fields: manual entry is the fallback, not a separate path.
+**What the server can and cannot run.** This is cPanel shared hosting: no
+root, no `apt install`, no Python, no OpenCV. The one OCR engine that can run
+there is **Tesseract as a self-contained binary** uploaded into the account's
+home directory and called from PHP (the deploy webhook already proves the
+account may run processes). Tesseract has an English model, a Dhivehi (Thaana)
+model and an OCR-B model for passport machine-readable zones. Image
+preparation (crop, rotate, threshold, contrast) is done in PHP with GD or
+Imagick, which the host has.
 
-Sending an ID card image to a cloud model means personal data leaves the
-server. **This needs the owner's explicit decision (Q-3)**, a line in the
-privacy notice pilgrims sign, and the API's no-training terms. The
-alternative, local OCR, is not realistic on cPanel (no Tesseract, no Python).
+**What to expect from it, honestly:**
+
+| Document | On-server Tesseract | Why |
+| --- | --- | --- |
+| Passport MRZ (the two lines at the bottom) | Good | Designed to be machine read; check digits confirm the result |
+| Bank slips and banking-app screenshots | Good | Clean rendered text |
+| ID card: ID number, dates, gender | Fair to good | Printed Latin text and digits in known positions |
+| ID card: English name, address | Fair | Depends on photo quality; glare and angle hurt |
+| ID card: Dhivehi name and address | Poor to fair | The Thaana model exists but is weak; expect corrections |
+| Passport visual zone (name as printed) | Fair | The MRZ carries the same name, which is read well |
+
+Reading is a **proposal** either way. The result is stored in
+`document_extractions` with the raw text, the reader, per-field confidence,
+and `status = proposed`. Staff see the image and the fields side by side,
+correct, and accept; only then does anything reach the pilgrim's record, and
+only then is the document `verified`. Passports are also checked by the MRZ
+check digits computed locally; a failed digit is flagged before a human looks.
+If the engine is missing or fails, the same screen works with empty fields.
+
+**The reader is an interface with two implementations.** `TesseractReader`
+runs on the server and no image leaves it. `ClaudeVisionReader` sends the
+image to Anthropic's API and reads every field, including Dhivehi, markedly
+better. The portal ships with the on-server reader as the default and the
+cloud reader switched off. If, after a few weeks of real ID cards, the
+correction rate is too high, the owner can turn the cloud reader on for ID
+cards only (a config switch and an API key), with a line in the pilgrim data
+notice. That is the owner's call, and the plan does not assume it.
+
+**Phase 2 starts with a feasibility check on the live server**: upload the
+Tesseract binary and models, run it on ten real ID cards and passports, and
+measure the field accuracy before building the screens around it. If the
+binary cannot run on this account (CloudLinux CageFS sometimes blocks
+non-standard binaries), the fallback is manual entry with the cloud reader
+offered as the only automatic option, and the owner decides.
 
 ### D-7. Telegram through a webhook, acting as the linked staff member
 
@@ -164,9 +224,9 @@ HTTP client against the Bot API directly; no bot framework package.
 
 Rihla's ADR 0002 applies unchanged: database queue woken by cron, no Redis,
 no websockets, PDFs rendered synchronously, jobs idempotent and tolerant of
-running late. Vision API calls run synchronously inside the upload action
-(3 to 10 seconds) with a "Read again" button, and fall back to the queue when
-the API is slow.
+running late. Tesseract runs synchronously inside the upload action (one to
+five seconds per image) with a "Read again" button, and the queue, woken by
+cron, is the fallback when a read takes longer.
 
 ---
 
@@ -203,22 +263,25 @@ tables with history have `created_by`.
 - **`documents`** and **`document_versions`**: ported. `type` is one of
   `id_card`, `passport`, `photo`, `vaccination`, `visa`, `bank_slip`, `other`.
   `documentable` is polymorphic (pilgrim or payment).
-- **`document_extractions`**: `document_version_id`, `reader` (`anthropic`|`manual`),
-  `model`, `fields` (JSON of proposed values), `confidence` (JSON per field),
-  `raw_response` (JSON), `mrz_valid` (nullable bool), `status`
+- **`document_extractions`**: `document_version_id`, `reader`
+  (`tesseract`|`anthropic`|`manual`), `model`, `fields` (JSON of proposed
+  values), `confidence` (JSON per field), `raw_response` (JSON or text),
+  `mrz_valid` (nullable bool), `status`
   (`proposed`|`accepted`|`rejected`), `reviewed_by`, `reviewed_at`,
   `accepted_fields` (JSON of what staff actually saved). Append-only.
 
 ### Trips
 
 - **`trips`**: `code` (`UMR-2027-07`), `name` ("July 2027 Umrah"),
-  `departs_on`, `returns_on`, `price_currency`, `capacity_total`,
+  `departs_on`, `returns_on`, `capacity_total`,
   `capacity_held`, `capacity_confirmed` (with Rihla's database constraint),
   `status` (`draft`|`open`|`closed`|`travelling`|`completed`|`cancelled`),
   `route_summary` (derived, e.g. "MLE → JED → Makkah → Madinah → MED → MLE"),
   `leader_user_id`, `notes`.
-- **`price_tiers`**: ported. `trip_id`, `occupancy` (`double`|`triple`|`quad`|`quint`),
-  `pax_type` (`adult`|`child`|`infant`), `amount_minor`, `currency`.
+- **`price_tiers`**: ported. `trip_id`, `occupancy` (`single`|`double`|`triple`|`quad`|`quint`),
+  `pax_type` (`adult`|`child`|`infant`), `amount_minor`, `currency` (MVR for
+  the package tiers; the single-room upgrade is a separate `room_upgrade`
+  tier in USD).
 - **`trip_flights`**: ported. `direction` (`outbound`|`connecting`|`return`),
   `airline`, `flight_number`, `from_airport`, `to_airport`, `departs_at`,
   `arrives_at`, `pnr`, `seats`, `notes`.
@@ -230,51 +293,76 @@ tables with history have `created_by`.
   `departs_on`, `trip_hotel_id`, `transport` (`flight`|`bus`|`train`), `notes`.
 - **`trip_excursions`**: the additional trips inside the trip. `title`
   (`Makkah Ziyarah`, `Taif Ziyarah`, `Jeddah trip`), `city`, `scheduled_on`,
-  `is_included` (free with the package), `price_minor`, `currency`,
-  `capacity`, `provider`, `notes`.
+  `is_included` (free with the package), `price_minor`, `currency` (SAR),
+  `capacity`, `provider`, `cost_minor` (what Hijaz pays the bus company),
+  `notes`.
 - **`trip_checklist_items`**, **`trip_costs`**: ported.
 
 ### Bookings and money
 
 - **`bookings`**: ported. `reference` (`HJZ-B-2027-0001`), `trip_id`,
-  `customer_id`, `currency`, `status` (`draft`|`confirmed`|`cancelled`|`completed`),
-  `seats`, `total_minor`, `paid_minor`, `trip_snapshot` (JSON), `notes`.
+  `customer_id`, `status` (`draft`|`confirmed`|`cancelled`|`completed`),
+  `seats`, `totals` (JSON per currency: `{"MVR": 2850000, "USD": 30000}`),
+  `paid` (JSON per currency, re-derived from allocations), `trip_snapshot`
+  (JSON), `notes`. The old single `currency` column is gone: a booking is
+  mostly MVR with USD lines when a private room is sold.
 - **`booking_pilgrims`**: ported from `booking_travellers`. `pilgrim_id`,
-  `occupancy`, `pax_type`, `price_tier_id`, `amount_minor`, `is_lead`,
-  `bus_group_id`, `ticket_number`, `visa_status`, `visa_number`.
-- **`booking_lines`**: ported. `type` (`seat`|`extra`|`discount`|`fee`),
-  signed `amount_minor`, `booking_pilgrim_id`, `trip_excursion_id` (for extras),
-  `discount_id`.
+  `occupancy`, `pax_type`, `price_tier_id`, `amount_minor`, `currency`,
+  `is_lead`, `bus_group_id`, `ticket_number`, `visa_status`, `visa_number`.
+- **`booking_lines`**: ported. `type` (`seat`|`room_upgrade`|`extra`|`discount`|`fee`),
+  signed `amount_minor`, **`currency`** (MVR for seats, USD for a private
+  room), `booking_pilgrim_id`, `trip_excursion_id`, `discount_id`.
 - **`discounts`**: `booking_id`, `kind` (`fixed`|`percent`), `value`,
-  `reason`, `approved_by`, `approved_at`, `line_id`. A discount is a negative
-  booking line with a reason and an approver.
-- **`excursion_bookings`**: a separate payable for paid extras so they have
-  their own invoice and payment trail. `reference` (`HJZ-X-2027-0001`),
-  `trip_excursion_id`, `customer_id`, `currency`, `total_minor`, `paid_minor`,
-  `status`; with **`excursion_participants`** (`booking_pilgrim_id`,
-  `amount_minor`).
+  `currency`, `reason`, `approved_by`, `approved_at`, `line_id`. A discount
+  is a negative booking line in one currency with a reason and an approver.
+- **`excursion_bookings`**: a separate SAR payable for paid extras so they
+  have their own invoice and payment trail. `reference` (`HJZ-X-2027-0001`),
+  `trip_excursion_id`, `customer_id`, `currency` (SAR), `total_minor`,
+  `paid_minor`, `status`, `collected_by` (the leader's user id); with
+  **`excursion_participants`** (`booking_pilgrim_id`, `amount_minor`).
 - **`payments`**, **`payment_transactions`**: ported (polymorphic over
-  `bookings` and `excursion_bookings`). Added: `settled_minor`,
-  `settled_currency`, `rate_snapshot`, `slip_extraction_id`, `channel`
-  (`portal`|`telegram`|`import`).
-- **`exchange_rates`**: see D-4.
-- **`bank_accounts`**: Hijaz's own accounts for instructions and matching.
-  `bank`, `account_name`, `account_number` (encrypted), `currency`, `is_active`.
+  `bookings` and `excursion_bookings`). A payment has one `currency` and
+  `amount_minor`, a `method` (`bank_transfer`|`cash`|`card`), an `account_id`
+  (which Hijaz account the money went into), a `slip_extraction_id`, and a
+  `channel` (`portal`|`telegram`|`leader`|`import`).
+- **`payment_allocations`**: `payment_id`, `currency`, `amount_minor`,
+  `rate_snapshot` (null when the allocation is in the payment's own
+  currency), `allocated_by`. The sum of a payment's allocations, converted at
+  their snapshots, equals the payment. A booking's `paid` per currency is the
+  sum of allocations in that currency.
+- **`exchange_rates`**: `from`, `to`, `rate` (decimal, 8 places), `as_of`,
+  `source`, `set_by`. Staff-entered, for reporting and cross-currency
+  allocation only.
 
 ### Finance
 
+- **`accounts`**: every place money sits. `name`, `kind`
+  (`bank`|`cash`|`leader_cash`), `currency`, `bank`, `account_name`,
+  `account_number` (encrypted), `holder_user_id` (for a leader's SAR float),
+  `is_active`. Seeded: Bank MVR, Bank USD, Office cash MVR, Office cash USD;
+  a leader SAR account is created per trip and leader.
 - **`ledger_entries`**: every rupee, dollar and riyal in or out.
-  `kind` (`income`|`expense`), `category_id`, `trip_id` (nullable: overheads),
-  `happened_on`, `description`, `counterparty`, `currency`, `amount_minor`,
-  `mvr_minor` (converted at the rate on that date), `rate_snapshot`, `method`
-  (`bank`|`cash`|`card`), `bank_account_id`, `payment_id` (when the income is a
-  verified pilgrim payment, created automatically), `document_id` (receipt
-  scan), `recorded_by`. Verified pilgrim payments and recorded trip costs post
-  here automatically; staff add everything else by hand.
+  `kind` (`income`|`expense`|`transfer`|`exchange`), `category_id`, `trip_id`
+  (nullable: overheads), `happened_on`, `description`, `counterparty`,
+  `account_id`, `currency`, `amount_minor` (signed: in is positive),
+  `mvr_minor` (at the dated table rate, for reporting), `rate_snapshot`,
+  `reference` (bank or TT reference), `payment_id` (when the income is a
+  verified pilgrim payment, posted automatically), `document_id` (receipt,
+  TT advice or exchange slip scan), `recorded_by`.
+  - A **currency purchase** is two entries sharing an `exchange_group`: MVR
+    out of Bank MVR and USD into Bank USD, with the realised rate stored on
+    both and the bank's charges as a third, expense entry.
+  - A **TT** is an expense entry out of a bank account with the beneficiary,
+    their bank, the reference and the charges, and a scan of the TT advice.
+  - A **cash handover** (a leader returning SAR after a trip, or the office
+    moving MVR cash to the bank) is a `transfer`: out of one account, into
+    another, same currency.
 - **`ledger_categories`**: `kind`, `name`, `sort_order`. Seeded: package
-  sales, excursion sales, other income; airfare, Makkah hotel, Madinah hotel,
-  transport, visa fees, Nusuk, meals, staff, bank charges, office, other.
-- **`budgets`** (phase 6): per trip and category, planned `amount_minor`.
+  sales, room upgrades, excursion sales, other income; airfare, Makkah hotel,
+  Madinah hotel, transport, excursion costs, visa fees, Nusuk, meals, staff,
+  bank charges and TT fees, exchange loss, office, other.
+- **`budgets`** (phase 6): per trip and category, planned `amount_minor` and
+  `currency`.
 
 ### Operations
 
@@ -331,9 +419,10 @@ page with sections the staff fill in any order, each a card on a phone:
 - **Route**: the ordered stops, generated from the flights and hotels and
   editable. The Madinah dates are the Madinah stop.
 - **Prices**: a tier per occupancy and pax type (double adult, triple adult,
-  quad adult, child, infant). Entered in whole units, stored in minor units.
+  quad adult, child, infant) in MVR, plus the private-room upgrade in USD.
+  Entered in whole units, stored in minor units.
 - **Additional trips**: Makkah Ziyarah (included), Taif Ziyarah (priced),
-  Jeddah trip (priced), each with date, price, capacity.
+  Jeddah trip (priced), each with date, price in SAR, capacity.
 - **Checklist**, **Costs**, **Buses**, **Rooms** (items 11 to 13).
 - **Copy this trip**: duplicates everything but bookings, shifting dates.
 
@@ -348,7 +437,7 @@ Flow on a phone:
 
 1. **Scan**: tap "New pilgrim", point the camera at the ID card (or pick a
    file). The image is encrypted and stored as a `document` of type `id_card`.
-2. **Read**: the vision model returns `name_en`, `name_dv`, `id_number`,
+2. **Read**: the on-server reader (D-6) returns `name_en`, `name_dv`, `id_number`,
    `gender`, `date_of_birth`, `address`, `issued_on`, `expires_on`, each with
    a confidence. The address is matched against the `islands` list to propose
    the island and atoll.
@@ -376,25 +465,26 @@ to another family (a married child) without losing history.
 ### 5. Payments from a slip, read automatically, verified by Finance
 
 1. Staff (or later the pilgrim) upload the bank transfer slip or a screenshot
-   of the banking app, against a booking or an excursion booking. Stored in
-   Rihla's encrypted slip vault.
-2. The vision model reads `amount`, `currency`, `paid_on`, `reference`,
-   `payer_name`, `payer_account`, `payee_account`, `remarks`.
-3. The portal proposes a match: payee account must be one of Hijaz's
-   `bank_accounts`; the remark or reference is searched for a booking reference
-   or a pilgrim ID number; the amount is compared with the balance. The payment
-   is created `awaiting_review` with the proposal attached.
-4. **Finance verifies** ("The money is in" / "It is not there", ported). If
-   the payment currency differs from the booking's, the rate in force is
-   snapshotted and `settled_minor` computed (D-4). The booking's paid total is
-   re-derived under a row lock. A verified payment posts an income ledger
-   entry automatically.
+   of the banking app, against a booking. Stored in Rihla's encrypted slip
+   vault. Office cash is recorded without a slip, against the cash account.
+2. The on-server reader (D-6) reads `amount`, `currency`, `paid_on`,
+   `reference`, `payer_name`, `payer_account`, `payee_account`, `remarks`.
+3. The portal proposes a match: the payee account must be one of Hijaz's
+   accounts; the remark or reference is searched for a booking reference or a
+   pilgrim ID number; the amount is compared with the balance in that
+   currency. The payment is created `awaiting_review` with the proposal.
+4. **Finance verifies** ("The money is in" / "It is not there", ported). The
+   payment is allocated to the booking's balance in its own currency; when a
+   pilgrim paid MVR for the USD room, Finance allocates across currencies at
+   the rate in force and the rate is snapshotted (D-4). The booking's paid
+   totals are re-derived under a row lock. A verified payment posts an income
+   ledger entry into the account it was paid into.
 5. **Payment slip**: a receipt PDF (ported) with Hijaz's details, the amount
-   in the paid currency and the settled amount, and the remaining balance.
-   Shareable as a signed link, sent by Telegram, or printed.
+   in the paid currency, how it was allocated, and the remaining balance per
+   currency. Shareable as a signed link, sent by Telegram, or printed.
 
-Duplicate detection: the same slip bytes are refused; the same reference
-number already verified is flagged.
+Duplicate detection: the same slip bytes are refused; the same bank reference
+already verified is flagged.
 
 ### 6. Discounts
 
@@ -406,7 +496,7 @@ be added or reversed, never silently changed.
 
 ### 7. Passport reading and the six-month rule
 
-Same scan-read-check-confirm flow as the ID card. The model reads the visual
+Same scan-read-check-confirm flow as the ID card. The reader reads the visual
 zone and the two MRZ lines; the MRZ **check digits are recomputed locally** for
 the passport number, date of birth, expiry and the composite digit. A failed
 check digit is a red flag on the screen before anyone verifies. Fields:
@@ -490,14 +580,22 @@ Each is a printable A4 PDF and a phone page, generated on demand:
 - Also: excursion participant lists, a payment status list, and a document
   status list (who still owes a passport or photo).
 
-### 14. Extra trips, payment and invoices
+### 14. Extra trips, paid in Saudi riyal on the ground
 
 From the trip's excursions, "Add participants" picks pilgrims (a family at
 once). For included excursions it is just a list. For priced ones it creates
-an `excursion_booking` for the customer with the participants as lines, an
-invoice PDF with its own reference, and the same slip-upload-read-verify
-payment flow as the main booking. Invoices and receipts are shared as a
-signed link (WhatsApp paste), a Telegram message, or print.
+an `excursion_booking` in SAR for the customer with the participants as lines
+and an invoice PDF with its own reference.
+
+Payment happens in Saudi Arabia, in cash, to the group leader: the leader's
+phone page (offline-capable, synced when there is signal) lists participants
+with "Paid SAR 150" buttons; each tap records a cash payment into that
+leader's SAR account, already verified because the leader is the one holding
+the money, and the pilgrim gets a receipt by Telegram or WhatsApp link, or a
+printed one later. After the trip the leader hands the SAR over to Finance,
+recorded as a transfer, and the excursion report shows collected, handed over
+and any difference. Invoices and receipts are shared as a signed link
+(WhatsApp paste), a Telegram message, or print.
 
 ### 15. Bank USD list
 
@@ -509,9 +607,19 @@ amount per pilgrim, are set per trip. Rows are deduplicated by ID number.
 
 ### 16. Income, expenses and yearly reports
 
-The `ledger_entries` table (section 3) is the single record of money. Verified
-pilgrim payments and recorded trip costs post into it automatically; staff add
-the rest with a receipt photo. Screens:
+The `ledger_entries` table (section 3) is the single record of money, across
+the accounts in section 3. Verified pilgrim payments post into it
+automatically; staff record everything else with a scan of the evidence:
+
+- **Buying USD**: amount of MVR paid, USD received, the bank's charges; the
+  realised rate is computed and shown, and the exchange slip is attached.
+- **Sending a TT**: account, currency, amount, beneficiary and their bank,
+  reference, charges, which trip and category it is for, the TT advice scan.
+- **Ground expenses in SAR**: recorded by the leader on the phone page against
+  their SAR float, with a receipt photo, synced later.
+- **Cash handovers** between leaders, the office and the bank.
+
+Screens:
 
 - **Trip profit and loss**: income by category, expenses by category, margin,
   per pilgrim, in each currency and in MVR at the dated rates (Rihla's
@@ -519,14 +627,20 @@ the rest with a receipt photo. Screens:
 - **Yearly report**: calendar or fiscal year, income and expenses by month and
   category, all trips plus overheads, MVR total, CSV export for the
   accountant.
-- **Cash book** per bank account and currency with running balance.
+- **Cash book** per account and currency with running balance, including
+  each leader's SAR float during a trip.
+- **Currency purchases**: every USD purchase with its realised rate against
+  the table rate, and the exchange cost per trip.
 - **Outstanding balances**: who owes what, by trip, with ageing.
 
 ### 17. Three currencies
 
-MVR, USD and SAR everywhere money appears (D-4). The rate table is a Finance
-screen; the current rate shows on every conversion; every stored conversion
-remembers its rate. Nothing is ever re-converted when the rate changes.
+MVR, USD and SAR everywhere money appears, each used where Hijaz uses it
+(D-4): MVR for packages, USD for private rooms and TTs, SAR for excursions and
+ground expenses. The rate table is a Finance screen; the current rate shows on
+every conversion; every stored conversion remembers its rate; the company's
+own USD purchases record the rate the bank really gave. Nothing is ever
+re-converted when a rate changes.
 
 ### 18. Trip reports
 
@@ -576,6 +690,11 @@ Webhook-driven (D-7). Linked staff can:
 
 Everything the bot does is audited as that user with `channel = telegram`.
 Unknown chats get one message explaining how to link, and nothing else.
+
+The owner wants Telegram connected early, so the bot goes live in **phase 0**
+with linking, `/start`, `/help` and a daily summary, and grows a command or an
+alert with every phase that follows rather than waiting for phase 5. It needs
+a bot token from @BotFather in the server `.env` (Q-9).
 
 ### 22. Mobile first
 
@@ -662,13 +781,13 @@ relative: S is a day or two of focused work, M a few days, L a week or more.
 
 | # | Phase | Delivers | Size |
 | --- | --- | --- | --- |
-| 0 | Foundation | Filament at `/portal`, roles and permissions, TOTP, audit log, settings, islands list, exchange rates, bank accounts, phone-first shell and bottom nav, backup and preflight commands, Telegram link (no commands yet) | L |
+| 0 | Foundation | Filament at `/portal`, roles and permissions, TOTP, audit log, settings, islands list, exchange rates, accounts, phone-first shell and bottom nav, backup and preflight commands, **Telegram bot live**: webhook, linking, `/help`, daily summary | L |
 | 1 | Trips | Trip create and copy, flights, hotels, route, prices, excursions, checklist, costs, capacity lock, trip status | M |
-| 2 | Pilgrims and documents | Customers and families, pilgrims, encrypted document wallet, ID card and passport reading with accept screens, MRZ check, photo checks, six-month rule, identity cross-check, duplicates, import | L |
-| 3 | Bookings and money | Staff-created bookings for individuals and families, lines, discounts, slip upload and reading, Finance verification, cross-currency settlement, invoices and receipts, excursion bookings and invoices, instalments, cancellations and refunds | L |
+| 2 | Pilgrims and documents | **Tesseract feasibility check on the live server first**, then customers and families, pilgrims, encrypted document wallet, ID card and passport reading with accept screens, MRZ check, photo checks, six-month rule, identity cross-check, duplicates, import | L |
+| 3 | Bookings and money | Staff-created bookings for individuals and families, MVR lines and USD room upgrades, discounts, slip upload and reading, Finance verification, per-currency balances and allocations, invoices and receipts, SAR excursion bookings and invoices, instalments, cancellations and refunds | L |
 | 4 | Operations | Bus groups, rooms, checkers, readiness board, manifests, bus and room lists, luggage tags and customer cards with QR, the Scan tab, visa tracker, ticket numbers | L |
-| 5 | Telegram | Alerts, queries, confirmed actions, slip upload by chat, daily summary | M |
-| 6 | Finance and reports | Ledger, categories, trip P&L, yearly report, cash book, outstanding balances, USD bank list, the report framework and the first report set, CSV | L |
+| 5 | Telegram, full | Alerts for every queue, queries, confirmed actions, slip upload by chat, PDFs by chat | M |
+| 6 | Finance and reports | Accounts and ledger, currency purchases, TTs, leader SAR floats and handovers, trip P&L, yearly report, cash book, outstanding balances, USD bank list, the report framework and the first report set, CSV | L |
 | 7 | On the ground | Offline leader page, roll calls, incidents, pilgrim self-service link | M |
 
 Phase 0 and 1 together give the owner a trip they can look at within the
@@ -679,16 +798,16 @@ first stretch of work; phase 2 is where the portal starts replacing paper.
 | # | Question | Needed by |
 | --- | --- | --- |
 | Q-1 | Who are the staff and which role does each get? (Names and emails; MFA for Admin and Finance.) | Phase 0 |
-| Q-2 | Trip prices: are they per occupancy (double, triple, quad) and per adult/child/infant, and in which currency are they usually quoted? | Phase 1 |
-| Q-3 | **Cloud reading of ID cards, passports and slips** (D-6): approve sending images to Anthropic's API under its no-training terms, and the wording of the pilgrim data notice. Also an Anthropic API key in the server `.env`. | Phase 2 |
+| Q-2 | ~~Trip prices and currencies~~ **Answered**: packages in MVR; private room in USD; excursions in SAR paid in Saudi; the company buys USD with MVR and sends TTs in USD and MVR. Still open: whether child and infant prices exist. | Phase 1 |
+| Q-3 | ~~Cloud reading of documents~~ **Answered**: the owner wants OCR on the server. Default is on-server Tesseract (D-6); the cloud reader stays off unless the owner turns it on later. | Phase 2 |
 | Q-4 | The detailed list of trip reports (item 18). | Phase 6 |
 | Q-5 | The bank USD list format and the bank's rules (item 15). | Phase 6 |
 | Q-6 | The exact passport-photo spec the visa agent requires. | Phase 2 |
 | Q-7 | Does Hijaz obtain visas and Nusuk permits itself, or through a Saudi agent? | Phase 4 |
 | Q-8 | How long to keep ID and passport scans after a trip (retention), and whether the accountant needs a specific export format. | Phase 2 |
-| Q-9 | A Telegram bot token (created with @BotFather by the owner, pasted into the server `.env`, never into the repo). | Phase 5 |
+| Q-9 | **Telegram approved.** Still needed: a bot token created with @BotFather by the owner and put in the server `.env` as `TELEGRAM_BOT_TOKEN`, never in the repo or in chat. | Phase 0 |
 | Q-10 | Hijaz's bank accounts (bank, account name and number, currency) for payment instructions and slip matching. | Phase 3 |
-| Q-11 | Should the portal be reachable at hijaz.rihla.mv/portal, or at a separate hostname? | Phase 0 |
+| Q-11 | ~~Hostname~~ **Answered**: hijaz.rihla.mv, a subdomain of rihla.mv, with everything else separate from Rihla. | Phase 0 |
 
 ### Engineering rules carried over from Rihla
 
@@ -714,3 +833,15 @@ Written into this repo's `AGENTS.md` as each becomes relevant.
 - Phone-first CSS with coarse-pointer rules, and the test that enforces it.
 - PDFs use the shared shell, brand colours by constant only, Thaana declared
   at both weights.
+
+### Owner's answers (2026-10-21)
+
+1. Hijaz is a separate company, not related to Rihla; only the hosting
+   subdomain is shared. (D-1)
+2. Trip payments are in MVR. A private room may be paid in USD. All additional
+   trips from Makkah or Madinah are paid there, in Saudi riyal. The company
+   buys USD with MVR and sends TTs in USD and MVR. (D-4, section 3, items 5,
+   14, 16, 17)
+3. OCR should run on the server. (D-6: on-server Tesseract by default, cloud
+   reader off, feasibility check first in phase 2)
+4. Telegram: yes, connect it. (D-7, item 21, phase 0)
