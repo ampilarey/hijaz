@@ -162,6 +162,18 @@ class Trip extends Model
         return $this->hasMany(TripCost::class)->orderByDesc('id');
     }
 
+    /** @return HasMany<SeatHold, $this> */
+    public function seatHoldsRelation(): HasMany
+    {
+        return $this->hasMany(SeatHold::class);
+    }
+
+    /** @return HasMany<Booking, $this> */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
     /** @return HasMany<TripStatusTransition, $this> */
     public function transitions(): HasMany
     {

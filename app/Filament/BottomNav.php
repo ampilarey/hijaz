@@ -5,9 +5,11 @@ namespace App\Filament;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Telegram;
 use App\Filament\Resources\Accounts\AccountResource;
+use App\Filament\Resources\Bookings\BookingResource;
 use App\Filament\Resources\Documents\DocumentResource;
 use App\Filament\Resources\ExchangeRates\ExchangeRateResource;
 use App\Filament\Resources\Islands\IslandResource;
+use App\Filament\Resources\Payments\PaymentResource;
 use App\Filament\Resources\Pilgrims\PilgrimResource;
 use App\Filament\Resources\Trips\TripResource;
 use Filament\Facades\Filament;
@@ -30,11 +32,15 @@ final class BottomNav
             return [];
         }
 
+        $verifiesMoney = (bool) Filament::auth()->user()?->can('payment.verify');
+
         $candidates = [
             ['Today', Dashboard::class, 'home'],
             ['Trips', TripResource::class, 'trips'],
             ['Pilgrims', PilgrimResource::class, 'pilgrims'],
-            ['Copies', DocumentResource::class, 'documents'],
+            ['Bookings', BookingResource::class, 'bookings'],
+            // Finance lives in the payments queue; everyone else in the copies queue.
+            ...($verifiesMoney ? [['Payments', PaymentResource::class, 'payments'], ['Copies', DocumentResource::class, 'documents']] : [['Copies', DocumentResource::class, 'documents'], ['Payments', PaymentResource::class, 'payments']]),
             ['Rates', ExchangeRateResource::class, 'rates'],
             ['Accounts', AccountResource::class, 'accounts'],
             ['Islands', IslandResource::class, 'islands'],

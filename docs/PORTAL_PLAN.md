@@ -851,10 +851,10 @@ relative: S is a day or two of focused work, M a few days, L a week or more.
 
 | # | Phase | Delivers | Size |
 | --- | --- | --- | --- |
-| 0 | Foundation | Filament at `/portal`, roles and permissions, TOTP, audit log, settings, islands list, exchange rates, accounts, phone-first shell and bottom nav, backup and preflight commands, **Telegram bot live**: webhook, linking, `/help`, daily summary | L |
-| 1 | Trips | Trip create and copy, flights, hotels, route, prices, excursions, checklist, costs, capacity lock, trip status | M |
-| 2 | Pilgrims and documents | **Tesseract feasibility check on the live server first**, then customers and families, pilgrims registered with just a name and phone, encrypted document wallet, document checklist per pilgrim, ID card, passport and visa reading with accept screens, bulk visa upload with passport-number matching, MRZ check, photo checks, six-month rule, identity cross-check, duplicates, import | L |
-| 3 | Bookings and money | Staff-created bookings for individuals and families, MVR lines and USD room upgrades, discounts, slip upload and reading, Finance verification, per-currency balances and allocations, invoices and receipts, SAR excursion bookings and invoices, instalments, cancellations and refunds | L |
+| 0 ✓ | Foundation | Filament at `/portal`, roles and permissions, TOTP, audit log, settings, islands list, exchange rates, accounts, phone-first shell and bottom nav, backup and preflight commands, **Telegram bot live**: webhook, linking, `/help`, daily summary | L |
+| 1 ✓ | Trips | Trip create and copy, flights, hotels, route, prices, excursions, checklist, costs, capacity lock, trip status | M |
+| 2 ✓ | Pilgrims and documents | **Tesseract feasibility check on the live server first**, then customers and families, pilgrims registered with just a name and phone, encrypted document wallet, document checklist per pilgrim, ID card, passport and visa reading with accept screens, bulk visa upload with passport-number matching, MRZ check, photo checks, six-month rule, identity cross-check, duplicates, import | L |
+| 3 ✓ | Bookings and money | Staff-created bookings for individuals and families, MVR lines and USD room upgrades, discounts, slip upload and reading, Finance verification, per-currency balances and allocations, invoices and receipts, SAR excursion bookings and invoices, instalments, cancellations and refunds | L |
 | 4 | Operations | Bus groups, rooms, checkers, readiness board, manifests, bus and room lists, luggage tags and customer cards with QR, the Scan tab, visa tracker, ticket numbers, bulk actions on every pilgrim list | L |
 | 5 | Telegram, full | Alerts for every queue, queries, confirmed actions, slip upload by chat, PDFs by chat | M |
 | 6 | Finance and reports | Accounts and ledger, currency purchases, TTs, leader SAR floats and handovers, trip P&L, yearly report, cash book, outstanding balances, USD bank list, the report framework and the first report set, CSV | L |
@@ -862,6 +862,8 @@ relative: S is a day or two of focused work, M a few days, L a week or more.
 
 Phase 0 and 1 together give the owner a trip they can look at within the
 first stretch of work; phase 2 is where the portal starts replacing paper.
+A tick marks a phase that is built, tested and deployed; docs/PORTAL.md says
+how to use what each one delivered.
 
 ### Questions for the owner
 

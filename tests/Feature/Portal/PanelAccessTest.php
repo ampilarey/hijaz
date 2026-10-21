@@ -89,10 +89,10 @@ class PanelAccessTest extends TestCase
     public function test_the_bottom_bar_shows_what_the_person_may_open(): void
     {
         $finance = $this->actingAs($this->staff(Access::FINANCE))->get('/portal')->assertOk();
-        $finance->assertSee('hz-bottom-nav', false)->assertSee('Rates')->assertSee('Accounts');
+        $finance->assertSee('hz-bottom-nav', false)->assertSee('Bookings')->assertSee('Payments');
 
         $leader = $this->actingAs($this->staff(Access::GROUP_LEADER))->get('/portal')->assertOk();
-        $leader->assertSee('hz-bottom-nav', false)->assertDontSee('Rates');
+        $leader->assertSee('hz-bottom-nav', false)->assertSee('Bookings')->assertDontSee('Rates');
     }
 
     public function test_the_panel_links_the_brand_mark_and_favicon(): void

@@ -109,6 +109,26 @@ final class Access
         'document.accept',
         'document.verify',
         'document.download',
+
+        'booking.viewAny',
+        'booking.view',
+        'booking.create',
+        'booking.update',
+        'booking.confirm',
+        'booking.cancel',
+        'booking.discount',
+
+        'payment.viewAny',
+        'payment.view',
+        'payment.create',
+        'payment.verify',
+        'payment.refund',
+        'payment.download',
+
+        'excursionBooking.viewAny',
+        'excursionBooking.view',
+        'excursionBooking.create',
+        'excursionBooking.update',
     ];
 
     /**
@@ -122,6 +142,8 @@ final class Access
         $costs = ['cost.viewAny', 'cost.view'];
         $people = ['customer.viewAny', 'customer.view', 'pilgrim.viewAny', 'pilgrim.view', 'document.viewAny', 'document.view'];
         $registration = ['customer.create', 'customer.update', 'pilgrim.create', 'pilgrim.update', 'document.create', 'document.accept', 'document.download'];
+        $money = ['booking.viewAny', 'booking.view', 'payment.viewAny', 'payment.view', 'excursionBooking.viewAny', 'excursionBooking.view'];
+        $desk = ['booking.create', 'booking.update', 'booking.confirm', 'booking.cancel', 'payment.create', 'payment.download', 'excursionBooking.create', 'excursionBooking.update'];
 
         return [
             self::ADMIN => [],
@@ -143,6 +165,8 @@ final class Access
                 ...$registration,
                 'pilgrim.verify',
                 'document.verify',
+                ...$money,
+                ...$desk,
             ],
 
             self::FINANCE => [
@@ -157,6 +181,12 @@ final class Access
                 'cost.create',
                 'cost.update',
                 ...$people,
+                ...$money,
+                'booking.discount',
+                'payment.create',
+                'payment.verify',
+                'payment.refund',
+                'payment.download',
             ],
 
             self::REGISTRATION => [
@@ -165,6 +195,8 @@ final class Access
                 'island.view',
                 ...$people,
                 ...$registration,
+                ...$money,
+                ...$desk,
             ],
 
             self::GROUP_LEADER => [
@@ -173,6 +205,10 @@ final class Access
                 'checklist.tick',
                 'pilgrim.viewAny',
                 'pilgrim.view',
+                ...$money,
+                'excursionBooking.create',
+                'excursionBooking.update',
+                'payment.create',
             ],
 
             self::READ_ONLY => [
@@ -181,6 +217,7 @@ final class Access
                 ...$checklist,
                 ...$costs,
                 ...$people,
+                ...$money,
             ],
         ];
     }

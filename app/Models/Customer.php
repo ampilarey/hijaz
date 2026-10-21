@@ -63,6 +63,12 @@ class Customer extends Model
         return $this->hasMany(Pilgrim::class)->orderByRaw("case when relationship_to_head = 'self' then 0 else 1 end")->orderBy('date_of_birth');
     }
 
+    /** @return HasMany<Booking, $this> */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class)->orderByDesc('id');
+    }
+
     /** @return BelongsTo<Pilgrim, $this> */
     public function head(): BelongsTo
     {

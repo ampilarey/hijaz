@@ -41,6 +41,12 @@ class ReaderManager
             $x = $this->run($reader, $bytes, $version->mime_type, $type);
         }
 
+        return $this->record($version, $x);
+    }
+
+    /** Write a proposal against a version, for a reading that already happened (a slip read before it was stored). */
+    public function record(DocumentVersion $version, Extraction $x): DocumentExtraction
+    {
         return $version->extractions()->create([
             'reader' => $x->reader,
             'model' => $x->model,

@@ -2,12 +2,16 @@
 
 namespace App\Services\Telegram;
 
+use App\Models\Booking;
+use App\Models\Document;
+use App\Models\Payment;
+use App\Models\Trip;
+use App\Models\TripChecklistItem;
 use App\Models\User;
 
 /**
- * The morning message. Each phase adds a section (slips to verify, documents
- * to accept, passports expiring); today it says the portal is up and what
- * the person has access to.
+ * The morning message: what is waiting for this person, by what they may
+ * do, then the trips ahead. Each phase adds its own section.
  */
 class DailySummary
 {
@@ -17,10 +21,61 @@ class DailySummary
             '<b>'.e(now()->translatedFormat('l j F')).'</b>',
             'Good morning, '.e($user->name).'.',
             '',
-            'Nothing is waiting for you yet. Trips and pilgrims arrive in the next phases.',
-            '',
-            'Portal: '.e(rtrim((string) config('app.url'), '/').'/portal'),
         ];
+
+        $queue = [];
+
+        if ($user->can('payment.verify')) {
+            $n = Payment::query()->awaitingReview()->count();
+            $queue[] = $n > 0 ? $n.' payment'.($n === 1 ? '' : 's').' to verify (/slips)' : null;
+        }
+
+        if ($user->can('booking.viewAny')) {
+            $n = Booking::query()->where('status', Booking::DRAFT)->whereHas('seatHolds', fn ($h) => $h->whereNull('released_at')->whereBetween('expires_at', [now(), now()->addDays(2)]))->count();
+            $queue[] = $n > 0 ? $n.' booking'.($n === 1 ? '' : 's').' whose held seats lapse within two days' : null;
+        }
+
+        if ($user->can('document.accept')) {
+            $n = Document::query()->forPilgrims()->pending()->whereHas('versions', fn ($v) => $v->whereNull('superseded_at')->whereHas('extractions', fn ($e) => $e->where('status', 'proposed')))->count();
+            $queue[] = $n > 0 ? $n.' reading'.($n === 1 ? '' : 's').' to accept' : null;
+        }
+
+        if ($user->can('document.verify')) {
+            $n = Document::query()->forPilgrims()->pending()->whereDoesntHave('versions', fn ($v) => $v->whereNull('superseded_at')->whereHas('extractions', fn ($e) => $e->where('status', 'proposed')))->count();
+            $queue[] = $n > 0 ? $n.' cop'.($n === 1 ? 'y' : 'ies').' to verify' : null;
+        }
+
+        if ($user->can('checklist.viewAny')) {
+            $n = TripChecklistItem::query()->open()->whereDate('due_on', '<', today())->whereHas('trip', fn ($q) => $q->live())->count();
+            $queue[] = $n > 0 ? $n.' checklist item'.($n === 1 ? '' : 's').' overdue' : null;
+        }
+
+        $queue = array_values(array_filter($queue));
+
+        if ($queue === []) {
+            $lines[] = 'Nothing is waiting for you.';
+        } else {
+            $lines[] = '<b>Waiting for you</b>';
+            foreach ($queue as $item) {
+                $lines[] = '• '.e($item);
+            }
+        }
+
+        if ($user->can('trip.viewAny')) {
+            $trips = Trip::query()->upcoming()->limit(3)->get();
+
+            if ($trips->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = '<b>Trips ahead</b>';
+
+                foreach ($trips as $trip) {
+                    $lines[] = '• '.e($trip->code).' · '.e($trip->departs_on->format('j M')).' · '.$trip->seatsTaken().'/'.$trip->capacity_total.' seats';
+                }
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = 'Portal: '.e(rtrim((string) config('app.url'), '/').'/portal');
 
         return implode("\n", $lines);
     }

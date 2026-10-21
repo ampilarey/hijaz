@@ -25,10 +25,10 @@ Admin role, and is the way back in if every Admin is ever lost.
 | Role | Can |
 | --- | --- |
 | Admin | Everything, including staff accounts, settings and the audit trail. Needs an authenticator app. |
-| Operations | Reference data, islands, and from phase 1 trips, pilgrims and documents. |
-| Finance | Exchange rates, accounts, and from phase 3 payments and the ledger. Needs an authenticator app. |
-| Registration | Islands (read), and from phase 2 pilgrim registration and documents. |
-| Group leader | From phase 4, their bus only. |
+| Operations | Reference data, islands, trips, pilgrims and documents, bookings and recording payments. |
+| Finance | Exchange rates, accounts, verifying and refunding payments, discounts, and from phase 6 the ledger. Needs an authenticator app. |
+| Registration | Islands (read), pilgrim registration and documents, bookings and recording payments. |
+| Group leader | Checklist ticks, pilgrims and bookings (read), additional trips and recording the riyal paid for them; from phase 4, their bus. |
 | Read only | Reports and lists, no changes. |
 
 Roles are given on the Staff screen. Deactivating an account keeps it and its
@@ -125,6 +125,48 @@ better; that is the owner's call because the image leaves the server.
   (once, in cPanel Terminal). Without it nothing runs on a timer and
   preflight warns.
 
+## Bookings and money
+
+- **A booking** puts a customer's pilgrims on a trip's seats. Money →
+  Bookings → New booking: pick the trip, the customer, then each traveller
+  and the room they share. The price comes from the trip's price list by room
+  and by age on the departure day (infant under 2, child under 12, else
+  adult; a missing child price falls back to the adult one). A single room is
+  a dollar line beside the rufiyaa fare, so a booking keeps a balance per
+  currency.
+- **Seats** are held the moment the booking is opened, for
+  `BOOKING_HOLD_DAYS` (7). *Confirm booking* makes them firm; a draft nobody
+  confirms is cancelled by the hourly `bookings:expire-holds` and the seats
+  go back. *Hold the seats longer* extends a draft.
+- **Charges** are lines: fares, room upgrades, fees and extras in any of the
+  three currencies, and discounts as negative lines with a reason and an
+  approver (Finance or Admin). Removing a line or taking back a discount
+  leaves the trail.
+- **Payments** are recorded (by Registration or Operations, from the booking's
+  Payments tab) and then **verified by Finance** (Money → Payments). A
+  transfer takes its slip; the slip is read and the amount, reference and
+  remarks are compared with what was typed. *Upload a slip* on the Payments
+  screen starts from the slip alone: the booking reference or an ID number
+  in the remarks finds the booking. A payment is never edited: a wrong one
+  is cancelled, a refused one is marked not received, and money going back
+  is a refund, which is a negative payment with its own receipt.
+- **Currencies.** A payment keeps its own currency. Verifying says which
+  balance it settles; dollars paid against a rufiyaa balance use the
+  exchange rate in force on the day paid (Money → Exchange rates) and the
+  rate is kept on the allocation.
+- **Invoices and receipts** are PDFs rendered when asked for, never stored:
+  *Invoice* on the booking page (balances, bank accounts marked *show on
+  invoices*, instalments), *Receipt* on a verified payment. Bank accounts
+  come from Money → Accounts.
+- **Additional trips** (Taif, Jeddah) are booked from the booking page for
+  some or all of its travellers, priced in riyal, paid in Saudi Arabia, and
+  have their own invoice and reference (`HJZ-X-…`).
+- **Instalments** are optional dates and amounts on a booking; they appear on
+  the invoice and the Today page flags any that fall behind.
+- **Telegram.** `/balance HJZ-B-2027-0001` (or an ID number, or a name) says
+  what a booking owes; `/slips` lists what waits for Finance; a recorded
+  payment is announced to everyone who may verify.
+
 ## Settings in `.env`
 
 | Key | Meaning |
@@ -133,6 +175,8 @@ better; that is the owner's call because the image leaves the server.
 | `TELEGRAM_WEBHOOK_SECRET` | Optional; derived from the app key when unset. |
 | `PORTAL_SECOND_FACTOR_REQUIRED` | `true` by default. `false` only for a first sign-in on a phone with no authenticator app yet, and back to `true` the same day. |
 | `APP_TIMEZONE` | `Indian/Maldives` by default. |
+| `BOOKING_HOLD_DAYS` | How long a draft booking keeps its seats. `7` by default. |
+| `INVOICE_TAX_NOTE`, `INVOICE_TERMS_NOTE` | Printed in the footer of invoices and receipts when set. |
 
 ## Conventions for the code
 

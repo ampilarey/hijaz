@@ -3,10 +3,19 @@
 namespace App\Providers;
 
 use App\Models\Account;
+use App\Models\Booking;
+use App\Models\BookingLine;
+use App\Models\BookingPilgrim;
 use App\Models\Customer;
+use App\Models\Discount;
 use App\Models\Document;
 use App\Models\ExchangeRate;
+use App\Models\ExcursionBooking;
+use App\Models\ExcursionParticipant;
 use App\Models\Island;
+use App\Models\Payment;
+use App\Models\PaymentAllocation;
+use App\Models\PaymentSchedule;
 use App\Models\Pilgrim;
 use App\Models\PriceTier;
 use App\Models\Setting;
@@ -72,5 +81,14 @@ class AppServiceProvider extends ServiceProvider
         Customer::class,
         Pilgrim::class,
         Document::class,
+        Booking::class,
+        BookingPilgrim::class,
+        BookingLine::class,
+        Discount::class,
+        PaymentSchedule::class,
+        Payment::class,
+        PaymentAllocation::class,
+        ExcursionBooking::class,
+        ExcursionParticipant::class,
     ];
 }

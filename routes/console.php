@@ -30,3 +30,8 @@ Schedule::command('hijaz:backup --keep=14')
 Schedule::command('telegram:daily')
     ->dailyAt((string) config('telegram.daily_summary_at', '08:00'))
     ->withoutOverlapping(10);
+
+// Seats held for a draft booking go back to the pool once the hold lapses.
+Schedule::command('bookings:expire-holds')
+    ->hourly()
+    ->withoutOverlapping(10);

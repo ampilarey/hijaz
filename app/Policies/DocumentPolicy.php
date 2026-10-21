@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Document;
 use App\Models\User;
 use App\Policies\Concerns\ChecksPermissions;
 
@@ -15,8 +16,13 @@ class DocumentPolicy
         return 'document';
     }
 
-    public function download(User $user): bool
+    /** A bank slip is part of its payment: whoever may see the payment may open the slip. */
+    public function download(User $user, ?Document $document = null): bool
     {
+        if ($document?->type === Document::BANK_SLIP) {
+            return $user->can('payment.view');
+        }
+
         return $user->can('document.download');
     }
 

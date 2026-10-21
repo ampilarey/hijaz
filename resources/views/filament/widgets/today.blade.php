@@ -3,6 +3,17 @@
         <x-slot name="heading">{{ $today }}</x-slot>
         <x-slot name="description">Welcome, {{ $user->name }}.</x-slot>
 
+        @if ($slipsWaiting + $holdsExpiring + $instalmentsOverdue > 0)
+            <div style="margin-bottom:1rem;">
+                <p style="font-weight:600;">Money</p>
+                <ul style="margin:.25rem 0 0; padding-left:1rem;">
+                    @if ($slipsWaiting > 0)<li><a href="{{ \App\Filament\Resources\Payments\PaymentResource::getUrl() }}?activeTab=review">{{ $slipsWaiting }} payment(s) to verify</a></li>@endif
+                    @if ($holdsExpiring > 0)<li><a href="{{ \App\Filament\Resources\Bookings\BookingResource::getUrl() }}?activeTab=drafts">{{ $holdsExpiring }} booking(s) whose seats lapse within two days</a></li>@endif
+                    @if ($instalmentsOverdue > 0)<li><a href="{{ \App\Filament\Resources\Bookings\BookingResource::getUrl() }}?activeTab=unpaid">{{ $instalmentsOverdue }} instalment(s) overdue</a></li>@endif
+                </ul>
+            </div>
+        @endif
+
         @if ($toAccept + $toVerify + $mismatches > 0)
             <div style="margin-bottom:1rem;">
                 <p style="font-weight:600;">Copies and pilgrims</p>

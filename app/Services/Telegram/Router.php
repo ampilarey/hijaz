@@ -2,11 +2,14 @@
 
 namespace App\Services\Telegram;
 
+use App\Models\Booking;
 use App\Models\Document;
+use App\Models\Payment;
 use App\Models\Pilgrim;
 use App\Models\TelegramLink;
 use App\Models\TelegramUpdate;
 use App\Models\Trip;
+use App\Models\User;
 use App\Services\Documents\DocumentWallet;
 use App\Services\Documents\ReaderManager;
 use App\Support\AuditContext;
@@ -98,6 +101,8 @@ class Router
             '/today' => $this->bot->sendMessage($link->chat_id, $this->summary->for($user)),
             '/trip', '/trips' => $this->bot->sendMessage($link->chat_id, $this->trips($argument)),
             '/find' => $this->bot->sendMessage($link->chat_id, $this->find($argument)),
+            '/balance' => $this->bot->sendMessage($link->chat_id, $this->balance($argument, $user)),
+            '/slips', '/payments' => $this->bot->sendMessage($link->chat_id, $this->slips($user)),
             '/upload' => $this->upload($link, $argument, $this->currentMessage),
             '/unlink' => $this->unlink($link),
             default => $this->bot->sendMessage($link->chat_id, "I don't know that one yet. Send /help for what I can do."),
@@ -222,6 +227,73 @@ class Router
         })->implode("\n\n");
     }
 
+    /** What a booking owes, by reference, ID number or customer name. */
+    private function balance(string $argument, User $user): string
+    {
+        if (! $user->can('booking.viewAny')) {
+            return 'Your account cannot see bookings.';
+        }
+
+        $term = trim($argument);
+
+        if ($term === '') {
+            return 'Send /balance HJZ-B-2027-0001, /balance A123456 or /balance part of a name.';
+        }
+
+        $query = Booking::query()->with(['customer', 'trip'])->live();
+
+        if (preg_match('/^HJZ-?B-?\d{4}-?\d{4}$/i', $term)) {
+            $query->where('reference', strtoupper(preg_replace('/^HJZ-?B-?(\d{4})-?(\d{4})$/i', 'HJZ-B-$1-$2', $term) ?? $term));
+        } elseif (preg_match('/^[Aa]\s?\d{6}$/', $term)) {
+            $query->whereHas('pilgrims.pilgrim', fn ($p) => $p->withIdNumber($term));
+        } else {
+            $query->whereHas('customer', fn ($c) => $c->where('name', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"));
+        }
+
+        $bookings = $query->orderByDesc('id')->limit(5)->get();
+
+        if ($bookings->isEmpty()) {
+            return 'No live booking matches "'.e($term).'".';
+        }
+
+        return $bookings->map(function (Booking $b): string {
+            $waiting = $b->payments()->awaitingReview()->count();
+
+            return implode("\n", array_filter([
+                '<b>'.e($b->reference).'</b> · '.e($b->customer->name).' · '.e($b->trip->code),
+                e($b->statusLabel()).' · '.$b->seats.' seat'.($b->seats === 1 ? '' : 's'),
+                implode(' · ', array_map(fn (string $c): string => e($b->total($c)->format()).' total, '.e($b->paidIn($c)->format()).' received', $b->currencies())) ?: 'nothing priced yet',
+                '<b>'.e(ucfirst($b->balanceSummary())).'</b>',
+                $waiting > 0 ? $waiting.' payment'.($waiting === 1 ? '' : 's').' waiting for Finance.' : null,
+            ]));
+        })->implode("\n\n");
+    }
+
+    /** The payments waiting to be verified, for whoever verifies them. */
+    private function slips(User $user): string
+    {
+        if (! $user->can('payment.view')) {
+            return 'Your account cannot see payments.';
+        }
+
+        $waiting = Payment::query()->awaitingReview()->with('payable')->orderBy('id')->limit(15)->get();
+
+        if ($waiting->isEmpty()) {
+            return 'Nothing waiting. Every recorded payment has been verified.';
+        }
+
+        $lines = ['<b>'.$waiting->count().' payment'.($waiting->count() === 1 ? '' : 's').' to verify</b>'];
+
+        foreach ($waiting as $p) {
+            $lines[] = e($p->reference).' · '.e($p->money()->format()).' · '.e($p->payable?->payableLabel() ?? '').($p->slip() ? '' : ' · no slip');
+        }
+
+        $lines[] = '';
+        $lines[] = 'Verify them under Money → Payments in the portal.';
+
+        return implode("\n", $lines);
+    }
+
     /**
      * A photo or file sent to the bot with the pilgrim's ID number in the
      * caption, and optionally the type: "A123456 passport". Stored exactly
@@ -300,12 +372,14 @@ class Router
             '/today — this morning\'s summary',
             '/trip — upcoming trips, or /trip UMR-2027-07 for one',
             '/find A123456 — a pilgrim by ID number or name',
+            '/balance HJZ-B-2027-0001 — what a booking owes (or by ID number or name)',
+            '/slips — payments waiting to be verified',
             'Send a photo with "A123456 passport" as the caption to upload a copy',
             '/me — who this chat acts as',
             '/unlink — stop acting as you',
             '/help — this list',
             '',
-            'More commands arrive with each phase: trips, pilgrims, payments.',
+            'More arrives with each phase: bus lists, room lists, reports.',
         ]));
     }
 
