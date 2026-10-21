@@ -73,6 +73,24 @@ final class Access
         'account.update',
 
         'telegram.link',
+
+        'trip.viewAny',
+        'trip.view',
+        'trip.create',
+        'trip.update',
+        'trip.transition',
+
+        'checklist.viewAny',
+        'checklist.view',
+        'checklist.create',
+        'checklist.update',
+        'checklist.delete',
+        'checklist.tick',
+
+        'cost.viewAny',
+        'cost.view',
+        'cost.create',
+        'cost.update',
     ];
 
     /**
@@ -80,8 +98,10 @@ final class Access
      */
     public static function matrix(): array
     {
-        $everyone = ['portal.access', 'telegram.link'];
+        $everyone = ['portal.access', 'telegram.link', 'trip.viewAny', 'trip.view'];
         $reference = ['island.viewAny', 'island.view', 'rate.viewAny', 'rate.view', 'account.viewAny', 'account.view', 'setting.view'];
+        $checklist = ['checklist.viewAny', 'checklist.view'];
+        $costs = ['cost.viewAny', 'cost.view'];
 
         return [
             self::ADMIN => [],
@@ -89,17 +109,29 @@ final class Access
             self::OPERATIONS => [
                 ...$everyone,
                 ...$reference,
+                ...$checklist,
                 'island.create',
                 'island.update',
+                'trip.create',
+                'trip.update',
+                'trip.transition',
+                'checklist.create',
+                'checklist.update',
+                'checklist.delete',
+                'checklist.tick',
             ],
 
             self::FINANCE => [
                 ...$everyone,
                 ...$reference,
+                ...$checklist,
+                ...$costs,
                 'rate.create',
                 'rate.update',
                 'account.create',
                 'account.update',
+                'cost.create',
+                'cost.update',
             ],
 
             self::REGISTRATION => [
@@ -110,11 +142,15 @@ final class Access
 
             self::GROUP_LEADER => [
                 ...$everyone,
+                ...$checklist,
+                'checklist.tick',
             ],
 
             self::READ_ONLY => [
                 ...$everyone,
                 ...$reference,
+                ...$checklist,
+                ...$costs,
             ],
         ];
     }

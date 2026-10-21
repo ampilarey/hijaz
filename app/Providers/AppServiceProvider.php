@@ -5,8 +5,14 @@ namespace App\Providers;
 use App\Models\Account;
 use App\Models\ExchangeRate;
 use App\Models\Island;
+use App\Models\PriceTier;
 use App\Models\Setting;
 use App\Models\TelegramLink;
+use App\Models\Trip;
+use App\Models\TripCost;
+use App\Models\TripExcursion;
+use App\Models\TripFlight;
+use App\Models\TripHotel;
 use App\Models\User;
 use App\Observers\AuditObserver;
 use App\Support\Access;
@@ -54,5 +60,11 @@ class AppServiceProvider extends ServiceProvider
         Island::class,
         Setting::class,
         TelegramLink::class,
+        Trip::class,
+        TripFlight::class,
+        TripHotel::class,
+        TripExcursion::class,
+        TripCost::class,
+        PriceTier::class,
     ];
 }
