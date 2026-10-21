@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Support\Access;
+use App\Support\Phone;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
  */
 class CreateAdmin extends Command
 {
-    protected $signature = 'portal:admin {email} {password} {--name=Admin : Display name for a new account}';
+    protected $signature = 'portal:admin {email} {password} {--name=Admin : Display name for a new account} {--phone= : Mobile number, to sign in with as well}';
 
     protected $description = 'Create an Admin account, or give an existing account the Admin role';
 
@@ -39,6 +40,7 @@ class CreateAdmin extends Command
 
         $user->fill([
             'name' => $user->name ?: (string) $this->option('name'),
+            'phone' => $this->option('phone') ? Phone::normalise((string) $this->option('phone')) : $user->phone,
             'password' => Hash::make($password),
             'is_active' => true,
         ]);

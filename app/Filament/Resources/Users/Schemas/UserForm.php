@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Models\User;
 use App\Support\Access;
+use App\Support\Phone;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -18,7 +20,19 @@ class UserForm
             Section::make()->schema([
                 TextInput::make('name')->required()->maxLength(120),
                 TextInput::make('email')->email()->required()->unique(ignoreRecord: true)->maxLength(190),
-                TextInput::make('phone')->tel()->maxLength(40),
+                TextInput::make('phone')->label('Mobile number')->tel()->maxLength(40)
+                    ->helperText('Signs them in as well as the email. 777 5123 is enough; the country code is added.')
+                    ->dehydrateStateUsing(fn ($state): ?string => Phone::normalise($state))
+                    // Checked in the number's stored shape, whatever shape it was typed in.
+                    ->rules([fn (?User $record): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
+                        $normalised = Phone::normalise(is_string($value) ? $value : null);
+
+                        if (filled($value) && $normalised === null) {
+                            $fail('That does not look like a mobile number.');
+                        } elseif ($normalised !== null && User::query()->where('phone', $normalised)->when($record, fn ($q) => $q->whereKeyNot($record->getKey()))->exists()) {
+                            $fail('Another account already signs in with that number.');
+                        }
+                    }]),
                 TextInput::make('password')
                     ->password()
                     ->revealable()

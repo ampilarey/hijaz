@@ -13,6 +13,14 @@ page, which lists the trips ahead (dates, hotels, from-price, seats left)
 for anyone who looks; a signed-in person lands on Today. A customer-facing
 website can take the address over later; the portal stays at `/portal`.
 
+## Signing in
+
+With an email address or a mobile number, and the password. A number can
+be typed as 777 5123; the country code is added. Admin and Finance accounts
+also type the six-digit code from their authenticator app. Each staff
+account's number is set under Admin → Staff; the first admin can be given
+one with `--phone=7775123` on the command below.
+
 ## The first account
 
 Nothing can be done until one Admin exists. In cPanel → Terminal:

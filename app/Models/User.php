@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Exceptions\LastAdmin;
 use App\Support\Access;
+use App\Support\Phone;
 use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
@@ -34,6 +35,12 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     use HasFactory, HasRoles, Notifiable;
 
     /** @var list<string> */
+    /** One shape for every number, so the one typed at sign-in finds the account. */
+    public function setPhoneAttribute(?string $value): void
+    {
+        $this->attributes['phone'] = Phone::normalise($value);
+    }
+
     protected $fillable = [
         'name',
         'email',

@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\BottomNav;
 use App\Filament\InitialsAvatarProvider;
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use App\Http\Middleware\EnsureSecondFactorWhenRequired;
 use App\Models\Trip;
@@ -52,7 +53,7 @@ class PortalPanelProvider extends PanelProvider
                 'primary' => Color::hex(Brand::GREEN_DARK),
                 'gray' => Color::Stone,
             ])
-            ->login()
+            ->login(Login::class)
             ->profile(isSimple: false)
             // Required for Admin and Finance only. The panel decides "required"
             // at boot, so it is told yes and the middleware below says for whom.
