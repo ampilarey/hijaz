@@ -39,6 +39,38 @@ class Bot
         ], $extra));
     }
 
+    /** Answer a button tap so the phone stops spinning; the text, if any, shows as a toast. */
+    public function answerCallbackQuery(string $callbackQueryId, ?string $text = null): Response
+    {
+        return $this->call('answerCallbackQuery', array_filter(['callback_query_id' => $callbackQueryId, 'text' => $text]));
+    }
+
+    /** Replace a message's text (and drop its buttons) once the thing it offered has been done. */
+    public function editMessageText(int $chatId, int $messageId, string $text, array $extra = []): Response
+    {
+        return $this->call('editMessageText', array_merge([
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => true,
+        ], $extra));
+    }
+
+    /**
+     * An inline keyboard: rows of [label => callback data].
+     *
+     * @param  list<array<string, string>>  $rows
+     * @return array{reply_markup: array<string, mixed>}
+     */
+    public static function keyboard(array $rows): array
+    {
+        return ['reply_markup' => ['inline_keyboard' => array_map(
+            fn (array $row): array => array_map(fn (string $label, string $data): array => ['text' => $label, 'callback_data' => $data], array_values($row), array_keys($row)),
+            $rows,
+        )]];
+    }
+
     public function sendDocument(int $chatId, string $filename, string $contents, ?string $caption = null): Response
     {
         return Http::timeout(30)

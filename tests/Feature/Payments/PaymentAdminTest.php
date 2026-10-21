@@ -198,10 +198,11 @@ class PaymentAdminTest extends TestCase
             return true;
         });
 
+        $all = implode("\n---\n", $texts);
         $this->assertStringContainsString('MVR 28,500 due', $texts[0]);
         $this->assertStringContainsString('1 payment waiting for Finance', $texts[0]);
         $this->assertStringContainsString($booking->reference, $texts[1]);
-        $this->assertStringContainsString('1 payment to verify', $texts[2]);
-        $this->assertStringContainsString('1 payment to verify (/slips)', $texts[3]);
+        $this->assertStringContainsString('1 payment to verify</b>', $all);
+        $this->assertStringContainsString('1 payment to verify (/slips)', $all);
     }
 }

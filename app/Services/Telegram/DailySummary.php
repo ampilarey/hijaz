@@ -3,11 +3,14 @@
 namespace App\Services\Telegram;
 
 use App\Models\Booking;
+use App\Models\BookingPilgrim;
 use App\Models\Document;
 use App\Models\Payment;
+use App\Models\PaymentSchedule;
 use App\Models\Trip;
 use App\Models\TripChecklistItem;
 use App\Models\User;
+use App\Support\Settings;
 
 /**
  * The morning message: what is waiting for this person, by what they may
@@ -48,6 +51,25 @@ class DailySummary
         if ($user->can('checklist.viewAny')) {
             $n = TripChecklistItem::query()->open()->whereDate('due_on', '<', today())->whereHas('trip', fn ($q) => $q->live())->count();
             $queue[] = $n > 0 ? $n.' checklist item'.($n === 1 ? '' : 's').' overdue' : null;
+        }
+
+        if ($user->can('booking.viewAny')) {
+            $n = PaymentSchedule::query()->whereDate('due_on', '<', today())->whereHas('booking', fn ($b) => $b->where('status', Booking::CONFIRMED))->with('booking')->get()->filter(fn (PaymentSchedule $s): bool => $s->isOverdue())->count();
+            $queue[] = $n > 0 ? $n.' instalment'.($n === 1 ? '' : 's').' overdue' : null;
+        }
+
+        if ($user->can('pilgrim.viewAny')) {
+            $months = (int) Settings::get(Settings::PASSPORT_VALIDITY_MONTHS);
+            $n = 0;
+
+            foreach (Trip::query()->upcoming()->get() as $trip) {
+                $n += BookingPilgrim::query()
+                    ->whereIn('booking_id', Booking::query()->where('trip_id', $trip->getKey())->live()->select('id'))
+                    ->whereHas('pilgrim', fn ($p) => $p->whereNotNull('passport_expires_on')->whereDate('passport_expires_on', '<', $trip->returns_on->copy()->addMonths($months)))
+                    ->count();
+            }
+
+            $queue[] = $n > 0 ? $n.' passport'.($n === 1 ? '' : 's').' expiring inside the window for a booked trip' : null;
         }
 
         $queue = array_values(array_filter($queue));

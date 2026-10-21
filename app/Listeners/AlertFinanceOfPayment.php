@@ -4,10 +4,9 @@ namespace App\Listeners;
 
 use App\Events\PaymentRecorded;
 use App\Models\Payment;
-use App\Models\TelegramLink;
+use App\Services\Telegram\Alerts;
 use App\Services\Telegram\Bot;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Tells everyone who may verify payments, on Telegram, that one is waiting.
@@ -16,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  */
 class AlertFinanceOfPayment implements ShouldQueue
 {
-    public function __construct(private readonly Bot $bot) {}
+    public function __construct(private readonly Alerts $alerts) {}
 
     public function handle(PaymentRecorded $event): void
     {
@@ -37,21 +36,12 @@ class AlertFinanceOfPayment implements ShouldQueue
             $payment->payer_reference ? 'Bank ref '.e($payment->payer_reference) : null,
             $payment->slip() ? 'Slip attached.' : ($payment->method === Payment::BANK_TRANSFER ? 'No slip attached.' : null),
             '',
-            'Verify: '.e(rtrim((string) config('app.url'), '/').'/portal/payments'),
+            'Portal: '.e(Alerts::portalUrl('payments')),
         ]));
 
-        TelegramLink::query()->active()->with('user')->each(function (TelegramLink $link) use ($payment, $text): void {
-            $user = $link->user;
-
-            if (! $user->is_active || $user->getKey() === $payment->recorded_by || ! $user->can('payment.verify')) {
-                return;
-            }
-
-            try {
-                $this->bot->sendMessage($link->chat_id, $text);
-            } catch (\Throwable $e) {
-                Log::warning('Payment alert failed', ['user_id' => $user->getKey(), 'error' => $e->getMessage()]);
-            }
-        });
+        $this->alerts->tell('payment.verify', $text, Bot::keyboard([[
+            'pay.verify:'.$payment->getKey() => 'Verify',
+            'pay.refuse:'.$payment->getKey() => 'Not received',
+        ]]), $payment->recorded_by);
     }
 }

@@ -2,13 +2,17 @@
 
 namespace App\Services\Documents;
 
+use App\Events\ReadingProposed;
 use App\Models\DocumentExtraction;
 use App\Models\DocumentVersion;
+use App\Models\Pilgrim;
 use App\Services\Documents\Readers\AnthropicVisionReader;
 use App\Services\Documents\Readers\Extraction;
 use App\Services\Documents\Readers\ManualReader;
 use App\Services\Documents\Readers\Reader;
 use App\Services\Documents\Readers\TesseractReader;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -46,6 +50,17 @@ class ReaderManager
 
     /** Write a proposal against a version, for a reading that already happened (a slip read before it was stored). */
     public function record(DocumentVersion $version, Extraction $x): DocumentExtraction
+    {
+        $extraction = $this->store($version, $x);
+
+        if (($extraction->fields ?? []) !== [] && $version->document->documentable instanceof Pilgrim) {
+            DB::afterCommit(fn () => ReadingProposed::dispatch($extraction, Auth::id()));
+        }
+
+        return $extraction;
+    }
+
+    private function store(DocumentVersion $version, Extraction $x): DocumentExtraction
     {
         return $version->extractions()->create([
             'reader' => $x->reader,

@@ -20,12 +20,12 @@ use Illuminate\Support\Carbon;
 class TelegramLink extends Model
 {
     /** @var list<string> */
-    protected $fillable = ['user_id', 'chat_id', 'telegram_username', 'telegram_name', 'linked_at', 'revoked_at', 'last_seen_at'];
+    protected $fillable = ['user_id', 'chat_id', 'telegram_username', 'telegram_name', 'linked_at', 'revoked_at', 'last_seen_at', 'pending'];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['linked_at' => 'datetime', 'revoked_at' => 'datetime', 'last_seen_at' => 'datetime'];
+        return ['pending' => 'array', 'linked_at' => 'datetime', 'revoked_at' => 'datetime', 'last_seen_at' => 'datetime'];
     }
 
     /** @return BelongsTo<User, $this> */

@@ -52,8 +52,39 @@ revoked on the next deploy.
    them, with their permissions, and everything it does is in the audit
    trail with channel `telegram`.
 
-Commands today: `/today`, `/me`, `/unlink`, `/help`. A morning summary goes to
-every linked staff member at 08:00 Maldives time (`TELEGRAM_DAILY_SUMMARY_AT`).
+**Ask.** `/today` (the morning summary), `/trip` and `/trip CODE` (seats,
+hotels, money received, readiness), `/ready` (what blocks the next trip),
+`/find A123456` or a name (a pilgrim with copies, booking and balance),
+`/balance HJZ-B-2027-0001` (or an ID number or a name), `/slips` (payments
+waiting, with buttons), `/checklist` (open items, tap to tick), `/rates`,
+`/me`, `/unlink`, `/help`.
+
+**Get PDFs.** `/bus 1`, `/room makkah` (add `hotel` for the hotel copy),
+`/manifest airline` (shapes: office, airline, hotel, ministry), `/invoice
+HJZ-B-2027-0001`, `/receipt HJZ-P-2027-0001`. Add a trip code for a trip
+other than the next one. The file arrives in the chat to forward on.
+
+**Get told.** Everyone linked who holds the permission hears when a payment
+is recorded (Finance, with *Verify* and *Not received* buttons), when a copy
+is read and waits for acceptance (with *Accept as read* unless a passport's
+MRZ check failed), and when an ID card and passport disagree. The person who
+caused it is not told. The morning summary at 08:00 Maldives time
+(`TELEGRAM_DAILY_SUMMARY_AT`) lists what waits for that person: payments to
+verify, holds about to lapse, readings to accept, copies to verify, overdue
+checklist items and instalments, passports expiring inside the window.
+
+**Act.** Every button is two taps: the first shows exactly what will happen,
+the second does it as you, through the same rules as the portal, and the
+message is rewritten with the result. *Not received* asks for the reason in
+your next message. A payment in another currency than the balance is verified
+in the portal, where the rate is applied.
+
+**Upload.** Send a photo (or PDF) with a caption: `A123456 passport` stores a
+copy for that pilgrim and reads it; `HJZ-B-2027-0001 10000` (currency
+optional, MVR by default) records a bank slip against that booking as a
+payment waiting for Finance, exactly as the portal would.
+
+Alerts are queued and sent from the scheduler within a minute.
 
 ## Pilgrims and copies
 

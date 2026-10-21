@@ -2,9 +2,12 @@
 
 namespace App\Services\Pilgrims;
 
+use App\Events\IdentityMismatchFound;
 use App\Models\Document;
 use App\Models\DocumentExtraction;
 use App\Models\Pilgrim;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Does the ID card agree with the passport? Compares what each accepted
@@ -53,6 +56,13 @@ class IdentityCheck
         }, $found);
 
         $pilgrim->forceFill(['identity_mismatches' => $merged ?: null])->save();
+
+        $new = array_values(array_filter($merged, fn (array $m): bool => empty($m['explained'])
+            && ! $previous->contains(fn (array $p): bool => $p['field'] === $m['field'] && ($p['id_card'] ?? null) === $m['id_card'] && ($p['passport'] ?? null) === $m['passport'])));
+
+        if ($new !== []) {
+            DB::afterCommit(fn () => IdentityMismatchFound::dispatch($pilgrim, $new, Auth::id()));
+        }
 
         return $merged;
     }

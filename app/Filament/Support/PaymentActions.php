@@ -13,6 +13,7 @@ use App\Models\TakesPayments;
 use App\Services\Documents\DocumentWallet;
 use App\Services\Documents\ReaderManager;
 use App\Services\Payments\Ledger;
+use App\Services\Payments\SlipIntake;
 use App\Services\Payments\SlipMatcher;
 use App\Support\Currency;
 use App\Support\Money;
@@ -120,58 +121,30 @@ final class PaymentActions
                 TextInput::make('amount')->label('Amount, if the slip is hard to read')->numeric()->step(0.01),
                 Select::make('currency')->options(Currency::options())->default(Currency::MVR)->native(false),
             ])
-            ->action(function (array $data, Ledger $ledger, DocumentWallet $wallet, ReaderManager $readers, SlipMatcher $matcher): void {
+            ->action(function (array $data, SlipIntake $intake): void {
                 $slip = $data['slip'];
                 $slip = is_array($slip) ? reset($slip) : $slip;
                 /** @var TemporaryUploadedFile $slip */
-                $bytes = (string) file_get_contents($slip->getRealPath());
-                $mime = (string) $slip->getMimeType();
+                $payable = filled($data['booking_id'] ?? null) ? Booking::query()->find($data['booking_id']) : null;
+                $typed = filled($data['amount'] ?? null) && Currency::isValid((string) ($data['currency'] ?? '')) ? Money::ofMajor((string) $data['amount'], (string) $data['currency']) : null;
 
-                $x = $readers->run($readers->reader(), $bytes, $mime, Document::BANK_SLIP);
-                $proposal = $matcher->propose($x->fields);
+                $result = $intake->record($payable, (string) file_get_contents($slip->getRealPath()), $slip->getClientOriginalName(), (string) $slip->getMimeType(), $typed);
 
-                $payable = filled($data['booking_id'] ?? null) ? Booking::query()->find($data['booking_id']) : $proposal['payable'];
-
-                if (! $payable instanceof TakesPayments) {
-                    Notification::make()->warning()->title('Could not tell whose slip this is')
-                        ->body('Nothing in it matched a booking reference or an ID number. Open the booking and record the payment from there.')
+                if ($result['payment'] === null) {
+                    Notification::make()->warning()->title($result['problem'] ?? 'Could not record the slip')
+                        ->body($result['payable'] === null ? 'Open the booking and record the payment from there, or pick the booking here.' : 'Type the amount and the currency and try again.')
                         ->persistent()->send();
 
                     return;
                 }
 
-                $amount = filled($data['amount'] ?? null) ? (string) $data['amount'] : ($x->fields['amount'] ?? null);
-                $currency = filled($data['amount'] ?? null) ? (string) $data['currency'] : strtoupper((string) ($x->fields['currency'] ?? $data['currency'] ?? Currency::MVR));
-
-                if ($amount === null || ! Currency::isValid($currency)) {
-                    Notification::make()->warning()->title('Could not read the amount')->body('Type the amount and the currency and try again.')->persistent()->send();
-
-                    return;
-                }
-
-                try {
-                    $payment = $ledger->record($payable, Money::ofMajor($amount, $currency), Payment::BANK_TRANSFER, array_filter([
-                        'paid_on' => $x->fields['paid_on'] ?? null,
-                        'payer_reference' => $x->fields['reference'] ?? null,
-                        'payer_name' => $x->fields['payer_name'] ?? null,
-                        'account_id' => ($proposal['account'] ?? null)?->getKey(),
-                    ]));
-                } catch (\InvalidArgumentException $e) {
-                    Notification::make()->danger()->title($e->getMessage())->send();
-
-                    return;
-                }
-
-                $version = $wallet->store($payment, $bytes, $slip->getClientOriginalName(), $mime, Document::BANK_SLIP);
-                $readers->record($version, $x);
-                $payment->transactions()->create(['type' => PaymentTransaction::SLIP_UPLOADED, 'user_id' => Auth::id(), 'payload' => ['document_version_id' => $version->getKey()]]);
-
-                Notification::make()->success()->title($payment->reference.' recorded for '.$payable->payableLabel())
-                    ->body($payment->money()->format().($proposal['reason'] ? ' · matched by the '.$proposal['reason'] : '').'. Finance verifies it next.')
+                $payment = $result['payment'];
+                Notification::make()->success()->title($payment->reference.' recorded for '.$result['payable']->payableLabel())
+                    ->body($payment->money()->format().($result['reason'] ? ' · matched by the '.$result['reason'] : '').'. Finance verifies it next.')
                     ->send();
 
-                if ($proposal['warnings'] !== []) {
-                    Notification::make()->warning()->title('Check the slip')->body(implode(' ', $proposal['warnings']))->persistent()->send();
+                if ($result['warnings'] !== []) {
+                    Notification::make()->warning()->title('Check the slip')->body(implode(' ', $result['warnings']))->persistent()->send();
                 }
             });
     }
