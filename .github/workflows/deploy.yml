@@ -107,7 +107,11 @@ jobs:
                 continue
               fi
 
-              echo "${SITE_URL} is serving ${DEPLOY_SHA} (deploy ${ok:-status unknown})"
+              if [ -z "$ok" ]; then
+                echo "::warning::${SITE_URL} is serving ${DEPLOY_SHA} but /api/health did not report the deploy steps for it. Check storage/logs/deploy.log on the server if the site misbehaves."
+              else
+                echo "${SITE_URL} is serving ${DEPLOY_SHA} (deploy ok=${ok})"
+              fi
               curl -fsS -o /dev/null -w "home %{http_code}\n" "${SITE_URL}/"
               exit 0
             fi
