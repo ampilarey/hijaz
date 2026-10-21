@@ -49,7 +49,7 @@ class CreateAdmin extends Command
         $user->assignRole(Access::ADMIN);
 
         $this->info(($created ? 'Created ' : 'Updated ').$email.' with the Admin role.');
-        $this->line('Sign in at '.rtrim((string) config('app.url'), '/').'/portal and set up an authenticator app when asked.');
+        $this->line('Sign in at '.rtrim((string) config('app.url'), '/').'/portal. An authenticator app is optional, under the profile menu.');
 
         return self::SUCCESS;
     }

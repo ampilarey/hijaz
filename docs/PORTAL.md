@@ -35,10 +35,10 @@ cd /home/rihla/hijaz
 php artisan portal:admin you@example.com 'a password of at least 8 characters'
 ```
 
-Then sign in at `/portal`. Admin and Finance are asked to set up an
-authenticator app (Google Authenticator, Authy, 1Password) on first sign-in;
-recovery codes are shown once. The same command gives an existing account the
-Admin role, and is the way back in if every Admin is ever lost.
+Then sign in at `/portal`. An authenticator app (Google Authenticator,
+Authy, 1Password) is optional and set up from the profile menu; recovery
+codes are shown once. The same command gives an existing account the Admin
+role, and is the way back in if every Admin is ever lost.
 
 ## Roles
 
