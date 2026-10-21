@@ -72,10 +72,20 @@ fi
 
 php artisan storage:link --force >/dev/null 2>&1 || log "WARN: storage:link failed"
 
+# A copy before migrate --force touches the live database, every time. If
+# the copy cannot be made the deploy stops here, and the log says why.
+php artisan hijaz:backup --keep=10 || { log "backup failed — not migrating"; exit 1; }
+
 php artisan migrate --force \
+  && php artisan db:seed --force \
   && php artisan config:cache \
   && php artisan route:cache \
   && php artisan view:clear \
   || { log "Laravel deploy steps failed"; exit 1; }
+
+# Harmless until TELEGRAM_BOT_TOKEN is set in .env.
+php artisan telegram:webhook || log "WARN: telegram webhook not set"
+
+php artisan hijaz:preflight --production || log "WARN: preflight reported problems (see above)"
 
 log "deploy complete: ${REMOTE:0:8}"

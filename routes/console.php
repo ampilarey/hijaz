@@ -1,17 +1,32 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Console\Commands\Preflight;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+/*
+| cPanel cannot keep a queue worker alive, so the scheduler (cron, once a
+| minute: scripts/install-scheduler-cron.sh) drains the database queue
+| instead. Jobs may start up to a minute late; write them so that is fine.
+| Every entry is idempotent and safe to run late, and the overlap lock
+| expires quickly so a killed run cannot hold the next one off for a day.
+*/
 
-// cPanel cannot keep a queue worker alive, so the scheduler (cron, once a
-// minute: scripts/install-scheduler-cron.sh) drains the database queue
-// instead. Jobs may therefore start up to a minute late; write them so that
-// is fine.
 Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
-    ->withoutOverlapping();
+    ->withoutOverlapping(5);
+
+// Proof the scheduler is alive, read by hijaz:preflight.
+Schedule::call(fn () => Cache::forever(Preflight::SCHEDULE_HEARTBEAT, now()->getTimestamp()))
+    ->everyMinute()
+    ->name('schedule-heartbeat');
+
+// A nightly copy, pruned, in case a deploy's own backup is ever the only other one.
+Schedule::command('hijaz:backup --keep=14')
+    ->dailyAt('02:30')
+    ->withoutOverlapping(30);
+
+// The morning summary to every linked staff member.
+Schedule::command('telegram:daily')
+    ->dailyAt((string) config('telegram.daily_summary_at', '08:00'))
+    ->withoutOverlapping(10);

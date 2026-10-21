@@ -15,7 +15,9 @@
 /auth.json
 /node_modules
 /public/fonts-manifest.dev.json
+/public/fonts/filament
 /public/hot
+/public/js/filament
 /public/storage
 /storage/*.key
 /storage/pail
@@ -29,3 +31,5 @@ Thumbs.db
 # CloudLinux PHP Selector writes these into the document root on cPanel.
 /php.ini
 /.user.ini
+
+/public/css/filament

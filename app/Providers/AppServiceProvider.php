@@ -2,7 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\Account;
+use App\Models\ExchangeRate;
+use App\Models\Island;
+use App\Models\Setting;
+use App\Models\TelegramLink;
+use App\Models\User;
+use App\Observers\AuditObserver;
+use App\Support\Access;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +30,29 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Admin may do everything, including verbs added by later phases
+        // before anyone has thought about which role gets them.
+        Gate::before(fn (User $user): ?bool => $user->hasRole(Access::ADMIN) ? true : null);
+
+        Password::defaults(fn () => Password::min(12));
+
+        foreach (self::AUDITED as $model) {
+            $model::observe(AuditObserver::class);
+        }
     }
+
+    /**
+     * Models whose every change is written to the audit trail. Each phase
+     * adds its own; a model holding money or identity is never left off.
+     *
+     * @var list<class-string<Model>>
+     */
+    public const AUDITED = [
+        User::class,
+        Account::class,
+        ExchangeRate::class,
+        Island::class,
+        Setting::class,
+        TelegramLink::class,
+    ];
 }

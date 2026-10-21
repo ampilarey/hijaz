@@ -44,12 +44,21 @@
     "src": "_tinos-700-normal-qGf2y18O.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DhR7roLq.css",
+    "file": "assets/app-C_082S4i.css",
     "name": "app",
     "names": [
       "app.css"
     ],
     "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/filament/portal/theme.css": {
+    "file": "assets/theme-BAmoIA5r.css",
+    "name": "theme",
+    "names": [
+      "theme.css"
+    ],
+    "src": "resources/css/filament/portal/theme.css",
     "isEntry": true
   },
   "resources/js/app.js": {

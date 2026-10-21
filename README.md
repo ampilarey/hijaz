@@ -5,15 +5,16 @@ https://hijaz.rihla.mv. Hijaz is its own company; the site is only hosted on a
 rihla.mv subdomain. Brand and contact details are in
 [docs/BRAND.md](docs/BRAND.md).
 
-The website itself is not written yet. What is here is the foundation it will
-be built on: a Laravel 13 skeleton, CI, and the same auto-deploy pipeline that
-runs `test.rihla.mv`.
+The public website is a placeholder. The staff portal at `/portal` is being
+built phase by phase (docs/PORTAL_PLAN.md); CI and the auto-deploy pipeline
+are in place.
 
 | Doc | What it covers |
 |---|---|
 | [docs/SERVER_SETUP.md](docs/SERVER_SETUP.md) | One-time cPanel setup: database, document root, SSL, first install, GitHub secret |
 | [docs/AUTO_DEPLOY.md](docs/AUTO_DEPLOY.md) | How a merge to `main` reaches the site, and what to check when it does not |
 | [docs/BRAND.md](docs/BRAND.md) | Logo files, colours, type, and the business contact details |
+| [docs/PORTAL.md](docs/PORTAL.md) | The staff portal: first account, roles, Telegram, backups, conventions |
 | [docs/PORTAL_PLAN.md](docs/PORTAL_PLAN.md) | The plan for the staff portal: what is reused from Rihla, decisions, domain model, every feature, build order |
 
 ## Local development

@@ -1,0 +1,82 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/*
+ * Phone first. The panel is designed at 390px and widened with min-width
+ * queries; nothing here overrides a layout below a width.
+ */
+
+/* A touch screen gets targets a thumb can hit and fields an iPhone will not zoom into. */
+@media (pointer: coarse) {
+    button,
+    .fi-btn,
+    .fi-icon-btn,
+    .fi-link {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* The bar along the bottom of a phone screen. Hidden once the sidebar is on screen. */
+.hz-bottom-nav {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-white, #fff);
+    border-top: 1px solid var(--gray-200, #e7e5e4);
+}
+
+.dark .hz-bottom-nav {
+    background: var(--gray-900, #1c1917);
+    border-top-color: var(--gray-800, #292524);
+}
+
+.hz-bottom-nav__item {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 56px;
+    padding: 8px 4px;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--gray-500, #78716c);
+    text-decoration: none;
+}
+
+.hz-bottom-nav__item.is-active {
+    color: var(--primary-600, #017a42);
+    font-weight: 600;
+}
+
+.hz-bottom-nav__icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Keep page content clear of the bar. */
+.fi-main {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 64rem) {
+    .hz-bottom-nav {
+        display: none;
+    }
+
+    .fi-main {
+        padding-bottom: 0;
+    }
+}

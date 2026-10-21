@@ -1,0 +1,962 @@
+[
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Baarah"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Dhiddhoo"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Filladhoo"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Hoarafushi"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Ihavandhoo"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Kelaa"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Maarandhoo"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Mulhadhoo"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Muraidhoo"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Thakandhoo"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Thuraakunu"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Uligamu"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Utheemu"
+ },
+ {
+  "atoll_code": "HA",
+  "atoll_name": "Haa Alif",
+  "name": "Vashafaru"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Hanimaadhoo"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Finey"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Naivaadhoo"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Nolhivaranfaru"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Nellaidhoo"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Nolhivaram"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Kurinbi"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Kulhudhuffushi"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Kumundhoo"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Neykurendhoo"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Vaikaradhoo"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Makunudhoo"
+ },
+ {
+  "atoll_code": "HDh",
+  "atoll_name": "Haa Dhaalu",
+  "name": "Hirimaradhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Bileffahi"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Feevah"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Feydhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Foakaidhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Funadhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Goidhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Kanditheemu"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Komandoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Lhaimagu"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Maaungoodhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Maroshi"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Milandhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Narudhoo"
+ },
+ {
+  "atoll_code": "Sh",
+  "atoll_name": "Shaviyani",
+  "name": "Noomaraa"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Foddhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Henbadhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Holhudhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Kendhikulhudhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Kudafari"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Landhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Lhohi"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Maafaru"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Maalhendhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Magoodhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Manadhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Miladhoo"
+ },
+ {
+  "atoll_code": "N",
+  "atoll_name": "Noonu",
+  "name": "Velidhoo"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Alifushi"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Angolhitheemu"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Fainu"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Hulhudhuffaaru"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Inguraidhoo"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Innamaadhoo"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Dhuvaafaru"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Kinolhas"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Maakurathu"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Maduvvaree"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Meedhoo"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Rasgetheemu"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Rasmaadhoo"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Ungoofaaru"
+ },
+ {
+  "atoll_code": "R",
+  "atoll_name": "Raa",
+  "name": "Vaadhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Dharavandhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Dhonfanu"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Eydhafushi"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Fehendhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Fulhadhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Goidhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Hithaadhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Kamadhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Kendhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Kihaadhoo"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Kudarikilu"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Maalhos"
+ },
+ {
+  "atoll_code": "B",
+  "atoll_name": "Baa",
+  "name": "Thulhaadhoo"
+ },
+ {
+  "atoll_code": "Lh",
+  "atoll_name": "Lhaviyani",
+  "name": "Hinnavaru"
+ },
+ {
+  "atoll_code": "Lh",
+  "atoll_name": "Lhaviyani",
+  "name": "Kurendhoo"
+ },
+ {
+  "atoll_code": "Lh",
+  "atoll_name": "Lhaviyani",
+  "name": "Maafilaafushi"
+ },
+ {
+  "atoll_code": "Lh",
+  "atoll_name": "Lhaviyani",
+  "name": "Naifaru"
+ },
+ {
+  "atoll_code": "Lh",
+  "atoll_name": "Lhaviyani",
+  "name": "Olhuvelifushi"
+ },
+ {
+  "atoll_code": "Lh",
+  "atoll_name": "Lhaviyani",
+  "name": "Ookolhufinolhu"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Dhiffushi"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Gaafaru"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Gulhi"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Guraidhoo"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Himmafushi"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Hulhumalé"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Huraa"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Kaashidhoo"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Malé"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Maafushi"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Thulusdhoo"
+ },
+ {
+  "atoll_code": "K",
+  "atoll_name": "Kaafu",
+  "name": "Villimalé"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Bodufolhudhoo"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Feridhoo"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Himandhoo"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Maalhos"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Mathiveri"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Rasdhoo"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Thoddoo"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Ukulhas"
+ },
+ {
+  "atoll_code": "AA",
+  "atoll_name": "Alif Alif",
+  "name": "Fesdhoo"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Dhangethi"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Dhiddhoo"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Dhigurah"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Fenfushi"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Haggnaameedhoo"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Kunburudhoo"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Maamingili"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Mahibadhoo"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Mandhoo"
+ },
+ {
+  "atoll_code": "ADh",
+  "atoll_name": "Alif Dhaal",
+  "name": "Omadhoo"
+ },
+ {
+  "atoll_code": "V",
+  "atoll_name": "Vaavu",
+  "name": "Felidhoo"
+ },
+ {
+  "atoll_code": "V",
+  "atoll_name": "Vaavu",
+  "name": "Fulidhoo"
+ },
+ {
+  "atoll_code": "V",
+  "atoll_name": "Vaavu",
+  "name": "Keyodhoo"
+ },
+ {
+  "atoll_code": "V",
+  "atoll_name": "Vaavu",
+  "name": "Rakeedhoo"
+ },
+ {
+  "atoll_code": "V",
+  "atoll_name": "Vaavu",
+  "name": "Thinadhoo"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Mulak"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Maduvvaree"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Dhiggaru"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Kolhufushi"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Muli"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Naalaafushi"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Raimmandhoo"
+ },
+ {
+  "atoll_code": "M",
+  "atoll_name": "Meemu",
+  "name": "Veyvah"
+ },
+ {
+  "atoll_code": "F",
+  "atoll_name": "Faafu",
+  "name": "Bileddhoo"
+ },
+ {
+  "atoll_code": "F",
+  "atoll_name": "Faafu",
+  "name": "Dharanboodhoo"
+ },
+ {
+  "atoll_code": "F",
+  "atoll_name": "Faafu",
+  "name": "Feeali"
+ },
+ {
+  "atoll_code": "F",
+  "atoll_name": "Faafu",
+  "name": "Magoodhoo"
+ },
+ {
+  "atoll_code": "F",
+  "atoll_name": "Faafu",
+  "name": "Nilandhoo"
+ },
+ {
+  "atoll_code": "Dh",
+  "atoll_name": "Dhaalu",
+  "name": "Bandidhoo"
+ },
+ {
+  "atoll_code": "Dh",
+  "atoll_name": "Dhaalu",
+  "name": "Hulhudheli"
+ },
+ {
+  "atoll_code": "Dh",
+  "atoll_name": "Dhaalu",
+  "name": "Kudahuvadhoo"
+ },
+ {
+  "atoll_code": "Dh",
+  "atoll_name": "Dhaalu",
+  "name": "Maaenboodhoo"
+ },
+ {
+  "atoll_code": "Dh",
+  "atoll_name": "Dhaalu",
+  "name": "Meedhoo"
+ },
+ {
+  "atoll_code": "Dh",
+  "atoll_name": "Dhaalu",
+  "name": "Rinbudhoo"
+ },
+ {
+  "atoll_code": "Dh",
+  "atoll_name": "Dhaalu",
+  "name": "Vaanee"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Burunee"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Vilufushi"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Madifushi"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Dhiyamingili"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Guraidhoo"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Gaadhiffushi"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Thimarafushi"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Veymandoo"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Kinbidhoo"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Omadhoo"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Hirilandhoo"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Kandoodhoo"
+ },
+ {
+  "atoll_code": "Th",
+  "atoll_name": "Thaa",
+  "name": "Vandhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Dhanbidhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Fonadhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Gan"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Hithadhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Isdhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Kunahandhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Maabaidhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Maamendhoo"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Maavah"
+ },
+ {
+  "atoll_code": "L",
+  "atoll_name": "Laamu",
+  "name": "Mundoo"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Dhaandhoo"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Dhevvadhoo"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Gemanafushi"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Kanduhulhudhoo"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Kolamaafushi"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Kondey"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Maamendhoo"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Nilandhoo"
+ },
+ {
+  "atoll_code": "GA",
+  "atoll_name": "Gaafu Alif",
+  "name": "Villingili"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Fares-Maathodaa"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Fiyoaree"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Gadhdhoo"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Hoandeddhoo"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Madaveli"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Nadellaa"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Rathafandhoo"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Thinadhoo"
+ },
+ {
+  "atoll_code": "GDh",
+  "atoll_name": "Gaafu Dhaalu",
+  "name": "Vaadhoo"
+ },
+ {
+  "atoll_code": "Gn",
+  "atoll_name": "Gnaviyani",
+  "name": "Fuvahmulah"
+ },
+ {
+  "atoll_code": "S",
+  "atoll_name": "Seenu",
+  "name": "Hithadhoo"
+ },
+ {
+  "atoll_code": "S",
+  "atoll_name": "Seenu",
+  "name": "Maradhoo"
+ },
+ {
+  "atoll_code": "S",
+  "atoll_name": "Seenu",
+  "name": "Maradhoo-Feydhoo"
+ },
+ {
+  "atoll_code": "S",
+  "atoll_name": "Seenu",
+  "name": "Feydhoo"
+ },
+ {
+  "atoll_code": "S",
+  "atoll_name": "Seenu",
+  "name": "Hulhudhoo"
+ },
+ {
+  "atoll_code": "S",
+  "atoll_name": "Seenu",
+  "name": "Meedhoo"
+ }
+]
