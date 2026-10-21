@@ -14,6 +14,7 @@ runs `test.rihla.mv`.
 | [docs/SERVER_SETUP.md](docs/SERVER_SETUP.md) | One-time cPanel setup: database, document root, SSL, first install, GitHub secret |
 | [docs/AUTO_DEPLOY.md](docs/AUTO_DEPLOY.md) | How a merge to `main` reaches the site, and what to check when it does not |
 | [docs/BRAND.md](docs/BRAND.md) | Logo files, colours, type, and the business contact details |
+| [docs/PORTAL_PLAN.md](docs/PORTAL_PLAN.md) | The plan for the staff portal: what is reused from Rihla, decisions, domain model, every feature, build order |
 
 ## Local development
 
