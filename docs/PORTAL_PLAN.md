@@ -252,8 +252,9 @@ tables with history have `created_by`.
   `passport_issuing_country`, `phone`, `emergency_contact_name`,
   `emergency_contact_phone`, `medical_notes`, `needs` (JSON: wheelchair, elderly
   companion, dietary), `photo_document_id`, `registration_status`
-  (`draft`|`awaiting_verification`|`verified`), `verified_by`, `verified_at`,
-  `identity_mismatches` (JSON, see item 9).
+  (`registered`|`documents_pending`|`verified`), `verified_by`, `verified_at`,
+  `identity_mismatches` (JSON, see item 9). A pilgrim is `registered` as soon
+  as a name and phone are typed; documents can come weeks later (item 23).
 - **`islands`**: master list, seeded. `atoll_code` (`K`, `GDh`…), `atoll_name`,
   `name`, `name_dv`. Used to resolve the island from an ID card address.
 - **`users`**: staff. Ported from Rihla with TOTP columns and `telegram_chat_id`.
@@ -262,7 +263,13 @@ tables with history have `created_by`.
 
 - **`documents`** and **`document_versions`**: ported. `type` is one of
   `id_card`, `passport`, `photo`, `vaccination`, `visa`, `bank_slip`, `other`.
-  `documentable` is polymorphic (pilgrim or payment).
+  `documentable` is polymorphic (pilgrim or payment). A visa document also
+  carries `visa_number`, `valid_from`, `valid_until`, `trip_id` (item 24).
+- **`document_batches`**: a bulk upload of visas or other copies.
+  `trip_id`, `type`, `uploaded_by`, `file_count`, `matched_count`; with
+  **`document_batch_items`** (`batch_id`, `document_version_id`,
+  `matched_pilgrim_id`, `match_reason` (`passport_number`|`name`|`manual`),
+  `status` (`matched`|`unmatched`|`assigned`|`discarded`)).
 - **`document_extractions`**: `document_version_id`, `reader`
   (`tesseract`|`anthropic`|`manual`), `model`, `fields` (JSON of proposed
   values), `confidence` (JSON per field), `raw_response` (JSON or text),
@@ -449,9 +456,11 @@ Flow on a phone:
    the extraction `accepted` with what was actually saved. Low-confidence
    fields are highlighted first.
 
-Nothing is saved to the pilgrim from an unaccepted reading (D-6). If the API
-is unavailable the fields are empty and staff type them; the reading can be
-retried later from the document.
+Nothing is saved to the pilgrim from an unaccepted reading (D-6). If the
+reader is unavailable the fields are empty and staff type them; the reading
+can be retried later from the document. Scanning is a shortcut, not a
+requirement: a pilgrim can be registered with no documents at all and the
+copies attached later (item 23).
 
 ### 4. Individuals and families
 
@@ -700,6 +709,66 @@ a bot token from @BotFather in the server `.env` (Q-9).
 
 D-5, applied to every item above.
 
+### 23. Register first, attach copies later
+
+Many pilgrims register by phone or at the counter with nothing but a name and
+a number, and bring the ID card and passport weeks later. So:
+
+- "New pilgrim" needs only a name and a phone. Everything else, including the
+  ID number and date of birth, is optional at that moment. The pilgrim is
+  `registered` and can be put on a trip and take a booking straight away.
+- The pilgrim's page shows a **document checklist**: ID card, passport,
+  photo, visa, each either missing, uploaded, or verified. Any copy can be
+  added at any time, from the pilgrim's page, from the trip's document list,
+  from a bulk upload (item 24), or by sending it to the Telegram bot with the
+  pilgrim's ID number in the caption.
+- When a copy arrives, the reader proposes the fields and staff accept them
+  into the record exactly as in item 3, with one addition: if the pilgrim
+  already has a typed ID number or date of birth that disagrees with the
+  scan, both values are shown and staff choose.
+- The trip's readiness board and the Today list count who is still missing
+  what, by trip, ordered by departure date. A trip cannot move to
+  `travelling` with unverified passports unless an Admin overrides it, with
+  the override recorded.
+- Nothing is blocked by a missing document except what truly needs it: a
+  manifest for the airline prints a blank passport column rather than
+  refusing to print.
+
+### 24. Visa copies and bulk actions
+
+**One at a time.** A visa is a document of type `visa` on the pilgrim,
+linked to the trip it is for. Uploading one reads the visa number, the
+passport number, the name and the validity dates; staff confirm. The
+pilgrim's visa status on that trip becomes `issued`, the dates are checked
+against the trip (a visa that expires before the return is flagged), and the
+copy prints with the pilgrim's documents when needed.
+
+**In bulk.** Visas usually arrive from the agent all at once, as a folder of
+PDFs or one multi-page PDF. "Upload visas" on the trip takes many files or a
+multi-page PDF, splits it into one document per page, reads each, and
+**matches it to a pilgrim by passport number** (then by name if the number
+did not read). The result is a review screen: matched rows with the pilgrim's
+name beside the visa image, and an unmatched list that staff assign by
+picking the pilgrim. Nothing is attached until staff confirm the batch;
+confirmed rows become verified visa documents, and the batch is kept so a
+mistaken match can be undone.
+
+**Bulk actions everywhere lists appear.** Select pilgrims on a trip, a bus,
+or a search result, then:
+
+- attach a document type to each from a batch (visas, photos, vaccination
+  certificates);
+- assign to a bus group or a room;
+- mark visa, ticket or vaccination status;
+- generate customer cards or luggage tags for the selection;
+- add the selection to an excursion;
+- export the selection to CSV or a manifest preset;
+- send a Telegram or WhatsApp message to each (a prepared link per person
+  until a sending channel exists).
+
+Every bulk action reports what it did per row and what it skipped and why,
+and writes one audit entry per affected pilgrim.
+
 ---
 
 ## 5. Other important features
@@ -709,10 +778,11 @@ release; the second in the months after.
 
 **Should be in the first release**
 
-1. **Visa tracking per pilgrim.** Status (`not_started` → `submitted` → `issued`
-   | `rejected`), visa number, issue and expiry dates, the agent used, a scan
-   of the visa. A trip cannot move to `travelling` with unissued visas unless
-   overridden. Ported from Rihla's visa desk in a lighter form.
+1. **Visa tracking per pilgrim** beyond the copy itself (item 24): status
+   (`not_started` → `submitted` → `issued` | `rejected`), the agent used,
+   submission date, and an SLA alert when a submitted visa is late. A trip
+   cannot move to `travelling` with unissued visas unless overridden. Ported
+   from Rihla's visa desk in a lighter form.
 2. **Ticket numbers per pilgrim.** Airline ticket number and seat on the
    booking pilgrim; the manifest prints them; the airline list preset uses
    them.
@@ -783,9 +853,9 @@ relative: S is a day or two of focused work, M a few days, L a week or more.
 | --- | --- | --- | --- |
 | 0 | Foundation | Filament at `/portal`, roles and permissions, TOTP, audit log, settings, islands list, exchange rates, accounts, phone-first shell and bottom nav, backup and preflight commands, **Telegram bot live**: webhook, linking, `/help`, daily summary | L |
 | 1 | Trips | Trip create and copy, flights, hotels, route, prices, excursions, checklist, costs, capacity lock, trip status | M |
-| 2 | Pilgrims and documents | **Tesseract feasibility check on the live server first**, then customers and families, pilgrims, encrypted document wallet, ID card and passport reading with accept screens, MRZ check, photo checks, six-month rule, identity cross-check, duplicates, import | L |
+| 2 | Pilgrims and documents | **Tesseract feasibility check on the live server first**, then customers and families, pilgrims registered with just a name and phone, encrypted document wallet, document checklist per pilgrim, ID card, passport and visa reading with accept screens, bulk visa upload with passport-number matching, MRZ check, photo checks, six-month rule, identity cross-check, duplicates, import | L |
 | 3 | Bookings and money | Staff-created bookings for individuals and families, MVR lines and USD room upgrades, discounts, slip upload and reading, Finance verification, per-currency balances and allocations, invoices and receipts, SAR excursion bookings and invoices, instalments, cancellations and refunds | L |
-| 4 | Operations | Bus groups, rooms, checkers, readiness board, manifests, bus and room lists, luggage tags and customer cards with QR, the Scan tab, visa tracker, ticket numbers | L |
+| 4 | Operations | Bus groups, rooms, checkers, readiness board, manifests, bus and room lists, luggage tags and customer cards with QR, the Scan tab, visa tracker, ticket numbers, bulk actions on every pilgrim list | L |
 | 5 | Telegram, full | Alerts for every queue, queries, confirmed actions, slip upload by chat, PDFs by chat | M |
 | 6 | Finance and reports | Accounts and ledger, currency purchases, TTs, leader SAR floats and handovers, trip P&L, yearly report, cash book, outstanding balances, USD bank list, the report framework and the first report set, CSV | L |
 | 7 | On the ground | Offline leader page, roll calls, incidents, pilgrim self-service link | M |
@@ -845,3 +915,6 @@ Written into this repo's `AGENTS.md` as each becomes relevant.
 3. OCR should run on the server. (D-6: on-server Tesseract by default, cloud
    reader off, feasibility check first in phase 2)
 4. Telegram: yes, connect it. (D-7, item 21, phase 0)
+5. A pilgrim can be registered without an ID card or passport; the copies are
+   attached later. (item 23)
+6. A visa copy can be attached to each pilgrim, and in bulk. (item 24)
