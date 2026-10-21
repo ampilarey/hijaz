@@ -10,6 +10,7 @@ use App\Models\Pilgrim;
 use App\Models\Trip;
 use App\Models\TripChecklistItem;
 use App\Models\User;
+use App\Services\Operations\Readiness;
 use Filament\Facades\Filament;
 use Filament\Widgets\Widget;
 
@@ -46,6 +47,9 @@ class TodayWidget extends Widget
             'instalmentsOverdue' => $user->can('booking.viewAny')
                 ? PaymentSchedule::query()->whereDate('due_on', '<', today())->whereHas('booking', fn ($b) => $b->where('status', Booking::CONFIRMED))->with('booking')->get()->filter(fn (PaymentSchedule $s): bool => $s->isOverdue())->count()
                 : 0,
+            'readiness' => $user->can('readiness.view')
+                ? Trip::query()->upcoming()->whereDate('departs_on', '<=', today()->addDays(45))->get()->map(fn (Trip $t): array => ['trip' => $t, 'blockers' => app(Readiness::class)->blockers($t)])->filter(fn (array $r): bool => $r['blockers'] !== [])->values()
+                : collect(),
             'overdue' => $user->can('checklist.viewAny')
                 ? TripChecklistItem::query()->open()->whereDate('due_on', '<', today())->whereHas('trip', fn ($q) => $q->live())->with('trip')->orderBy('due_on')->limit(10)->get()
                 : collect(),

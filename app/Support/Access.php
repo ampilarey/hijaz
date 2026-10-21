@@ -129,6 +129,32 @@ final class Access
         'excursionBooking.view',
         'excursionBooking.create',
         'excursionBooking.update',
+
+        'trip.override',
+
+        'bus.viewAny',
+        'bus.view',
+        'bus.create',
+        'bus.update',
+        'bus.delete',
+        'bus.assign',
+
+        'room.viewAny',
+        'room.view',
+        'room.create',
+        'room.update',
+        'room.delete',
+        'room.assign',
+
+        'card.viewAny',
+        'card.view',
+        'card.create',
+        'card.scan',
+
+        'list.view',
+        'readiness.view',
+        'pilgrim.checkIn',
+        'visa.update',
     ];
 
     /**
@@ -143,6 +169,8 @@ final class Access
         $people = ['customer.viewAny', 'customer.view', 'pilgrim.viewAny', 'pilgrim.view', 'document.viewAny', 'document.view'];
         $registration = ['customer.create', 'customer.update', 'pilgrim.create', 'pilgrim.update', 'document.create', 'document.accept', 'document.download'];
         $money = ['booking.viewAny', 'booking.view', 'payment.viewAny', 'payment.view', 'excursionBooking.viewAny', 'excursionBooking.view'];
+        $ground = ['bus.viewAny', 'bus.view', 'room.viewAny', 'room.view', 'card.viewAny', 'card.view', 'list.view', 'readiness.view'];
+        $operations = ['bus.create', 'bus.update', 'bus.delete', 'bus.assign', 'room.create', 'room.update', 'room.delete', 'room.assign', 'card.create', 'card.scan', 'pilgrim.checkIn', 'visa.update'];
         $desk = ['booking.create', 'booking.update', 'booking.confirm', 'booking.cancel', 'payment.create', 'payment.download', 'excursionBooking.create', 'excursionBooking.update'];
 
         return [
@@ -167,6 +195,8 @@ final class Access
                 'document.verify',
                 ...$money,
                 ...$desk,
+                ...$ground,
+                ...$operations,
             ],
 
             self::FINANCE => [
@@ -187,6 +217,7 @@ final class Access
                 'payment.verify',
                 'payment.refund',
                 'payment.download',
+                ...$ground,
             ],
 
             self::REGISTRATION => [
@@ -197,6 +228,10 @@ final class Access
                 ...$registration,
                 ...$money,
                 ...$desk,
+                ...$ground,
+                'card.create',
+                'card.scan',
+                'visa.update',
             ],
 
             self::GROUP_LEADER => [
@@ -209,6 +244,9 @@ final class Access
                 'excursionBooking.create',
                 'excursionBooking.update',
                 'payment.create',
+                ...$ground,
+                'card.scan',
+                'pilgrim.checkIn',
             ],
 
             self::READ_ONLY => [
@@ -218,6 +256,7 @@ final class Access
                 ...$costs,
                 ...$people,
                 ...$money,
+                ...$ground,
             ],
         ];
     }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -50,6 +51,12 @@ class TripHotel extends Model
     public function trip(): BelongsTo
     {
         return $this->belongsTo(Trip::class);
+    }
+
+    /** @return HasMany<Room, $this> */
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(Room::class)->orderBy('sort_order')->orderBy('label');
     }
 
     public function nights(): int

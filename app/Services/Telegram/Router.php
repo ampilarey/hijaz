@@ -12,6 +12,7 @@ use App\Models\Trip;
 use App\Models\User;
 use App\Services\Documents\DocumentWallet;
 use App\Services\Documents\ReaderManager;
+use App\Services\Operations\Readiness;
 use App\Support\AuditContext;
 use Illuminate\Support\Facades\Auth;
 
@@ -103,6 +104,7 @@ class Router
             '/find' => $this->bot->sendMessage($link->chat_id, $this->find($argument)),
             '/balance' => $this->bot->sendMessage($link->chat_id, $this->balance($argument, $user)),
             '/slips', '/payments' => $this->bot->sendMessage($link->chat_id, $this->slips($user)),
+            '/ready' => $this->bot->sendMessage($link->chat_id, $this->ready($argument, $user)),
             '/upload' => $this->upload($link, $argument, $this->currentMessage),
             '/unlink' => $this->unlink($link),
             default => $this->bot->sendMessage($link->chat_id, "I don't know that one yet. Send /help for what I can do."),
@@ -269,6 +271,39 @@ class Router
         })->implode("\n\n");
     }
 
+    /** The readiness board for one trip, or the next one. */
+    private function ready(string $argument, User $user): string
+    {
+        if (! $user->can('readiness.view')) {
+            return 'Your account cannot see the readiness board.';
+        }
+
+        $trip = $argument !== ''
+            ? Trip::query()->where('code', strtoupper($argument))->orWhere('name', 'like', '%'.$argument.'%')->orderByDesc('departs_on')->first()
+            : Trip::query()->upcoming()->first();
+
+        if ($trip === null) {
+            return $argument === '' ? 'No upcoming trip.' : 'No trip matches "'.e($argument).'".';
+        }
+
+        $readiness = app(Readiness::class);
+        $concerns = $readiness->concerns($trip);
+        $lines = ['<b>'.e($trip->name).'</b> · '.e($trip->code).' · departs '.e($trip->departs_on->format('j M')).' ('.e($trip->departs_on->diffForHumans()).')'];
+
+        if ($concerns === []) {
+            $lines[] = 'Ready. Nothing stands in the way.';
+        }
+
+        foreach ($concerns as $c) {
+            $lines[] = ($c['severity'] === Readiness::BLOCKING ? '⛔ ' : '⚠ ').e($c['headline']);
+        }
+
+        $lines[] = '';
+        $lines[] = 'Details: '.e(rtrim((string) config('app.url'), '/').'/portal/trips/'.$trip->getKey().'/readiness');
+
+        return implode("\n", $lines);
+    }
+
     /** The payments waiting to be verified, for whoever verifies them. */
     private function slips(User $user): string
     {
@@ -374,6 +409,7 @@ class Router
             '/find A123456 — a pilgrim by ID number or name',
             '/balance HJZ-B-2027-0001 — what a booking owes (or by ID number or name)',
             '/slips — payments waiting to be verified',
+            '/ready — what blocks the next trip, or /ready UMR-2027-07',
             'Send a photo with "A123456 passport" as the caption to upload a copy',
             '/me — who this chat acts as',
             '/unlink — stop acting as you',

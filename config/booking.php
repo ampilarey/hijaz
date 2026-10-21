@@ -11,4 +11,10 @@ return [
     'infant_under' => 2,
     'child_under' => 12,
 
+    // A child in a hotel room needs an adult from the same booking in it.
+    'room_child_under' => 16,
+
+    // Days after a visa is submitted before it counts as late.
+    'visa_sla_days' => (int) env('VISA_SLA_DAYS', 7),
+
 ];

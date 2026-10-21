@@ -3,6 +3,7 @@
 namespace App\Filament;
 
 use App\Filament\Pages\Dashboard;
+use App\Filament\Pages\Scan;
 use App\Filament\Pages\Telegram;
 use App\Filament\Resources\Accounts\AccountResource;
 use App\Filament\Resources\Bookings\BookingResource;
@@ -32,15 +33,23 @@ final class BottomNav
             return [];
         }
 
-        $verifiesMoney = (bool) Filament::auth()->user()?->can('payment.verify');
+        $user = Filament::auth()->user();
+        $fifth = match (true) {
+            (bool) $user?->can('payment.verify') => ['Payments', PaymentResource::class, 'payments'],
+            (bool) $user?->can('document.accept') => ['Copies', DocumentResource::class, 'documents'],
+            default => ['Scan', Scan::class, 'scan'],
+        };
 
         $candidates = [
             ['Today', Dashboard::class, 'home'],
             ['Trips', TripResource::class, 'trips'],
             ['Pilgrims', PilgrimResource::class, 'pilgrims'],
             ['Bookings', BookingResource::class, 'bookings'],
-            // Finance lives in the payments queue; everyone else in the copies queue.
-            ...($verifiesMoney ? [['Payments', PaymentResource::class, 'payments'], ['Copies', DocumentResource::class, 'documents']] : [['Copies', DocumentResource::class, 'documents'], ['Payments', PaymentResource::class, 'payments']]),
+            // Finance lives in the payments queue, the desk in the copies queue, the ground in Scan.
+            $fifth,
+            ['Scan', Scan::class, 'scan'],
+            ['Payments', PaymentResource::class, 'payments'],
+            ['Copies', DocumentResource::class, 'documents'],
             ['Rates', ExchangeRateResource::class, 'rates'],
             ['Accounts', AccountResource::class, 'accounts'],
             ['Islands', IslandResource::class, 'islands'],

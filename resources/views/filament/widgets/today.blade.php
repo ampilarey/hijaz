@@ -26,6 +26,17 @@
             </div>
         @endif
 
+        @if ($readiness->isNotEmpty())
+            <div style="margin-bottom:1rem;">
+                <p style="font-weight:600; color:var(--danger-600, #b91c1c);">Trips not ready to travel</p>
+                <ul style="margin:.25rem 0 0; padding-left:1rem;">
+                    @foreach ($readiness as $r)
+                        <li><a href="{{ \App\Filament\Resources\Trips\TripResource::getUrl('readiness', ['record' => $r['trip']]) }}">{{ $r['trip']->code }}</a> <span class="fi-color-gray">· departs {{ $r['trip']->departs_on->format('j M') }} · {{ implode('; ', $r['blockers']) }}</span></li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         @if ($overdue->isNotEmpty())
             <div style="margin-bottom:1rem;">
                 <p style="font-weight:600; color:var(--danger-600, #b91c1c);">Overdue checklist items</p>

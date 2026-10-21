@@ -6,6 +6,8 @@ use App\Models\Account;
 use App\Models\Booking;
 use App\Models\BookingLine;
 use App\Models\BookingPilgrim;
+use App\Models\BusGroup;
+use App\Models\Card;
 use App\Models\Customer;
 use App\Models\Discount;
 use App\Models\Document;
@@ -18,6 +20,8 @@ use App\Models\PaymentAllocation;
 use App\Models\PaymentSchedule;
 use App\Models\Pilgrim;
 use App\Models\PriceTier;
+use App\Models\Room;
+use App\Models\RoomAssignment;
 use App\Models\Setting;
 use App\Models\TelegramLink;
 use App\Models\Trip;
@@ -90,5 +94,9 @@ class AppServiceProvider extends ServiceProvider
         PaymentAllocation::class,
         ExcursionBooking::class,
         ExcursionParticipant::class,
+        BusGroup::class,
+        Room::class,
+        RoomAssignment::class,
+        Card::class,
     ];
 }

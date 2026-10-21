@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -172,6 +173,24 @@ class Trip extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /** @return HasMany<BusGroup, $this> */
+    public function busGroups(): HasMany
+    {
+        return $this->hasMany(BusGroup::class)->orderBy('sort_order')->orderBy('name');
+    }
+
+    /** Everyone on a live booking for this trip, through the bookings. @return HasManyThrough<BookingPilgrim, Booking, $this> */
+    public function travellers(): HasManyThrough
+    {
+        return $this->hasManyThrough(BookingPilgrim::class, Booking::class)->whereIn('bookings.status', [Booking::DRAFT, Booking::CONFIRMED]);
+    }
+
+    /** @return HasManyThrough<Room, TripHotel, $this> */
+    public function rooms(): HasManyThrough
+    {
+        return $this->hasManyThrough(Room::class, TripHotel::class);
     }
 
     /** @return HasMany<TripStatusTransition, $this> */

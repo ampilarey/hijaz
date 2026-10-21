@@ -5,14 +5,19 @@ namespace App\Filament\Resources\Trips;
 use App\Filament\Resources\Trips\Pages\CreateTrip;
 use App\Filament\Resources\Trips\Pages\EditTrip;
 use App\Filament\Resources\Trips\Pages\ListTrips;
+use App\Filament\Resources\Trips\Pages\TripLists;
+use App\Filament\Resources\Trips\Pages\TripReadiness;
 use App\Filament\Resources\Trips\Pages\ViewTrip;
+use App\Filament\Resources\Trips\RelationManagers\BusesRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\ChecklistRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\CostsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\ExcursionsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\FlightsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\HotelsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\PriceTiersRelationManager;
+use App\Filament\Resources\Trips\RelationManagers\RoomsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\StopsRelationManager;
+use App\Filament\Resources\Trips\RelationManagers\TravellersRelationManager;
 use App\Filament\Resources\Trips\Schemas\TripForm;
 use App\Filament\Resources\Trips\Tables\TripsTable;
 use App\Models\Trip;
@@ -47,6 +52,9 @@ class TripResource extends Resource
     public static function getRelations(): array
     {
         return [
+            TravellersRelationManager::class,
+            BusesRelationManager::class,
+            RoomsRelationManager::class,
             FlightsRelationManager::class,
             HotelsRelationManager::class,
             StopsRelationManager::class,
@@ -64,6 +72,8 @@ class TripResource extends Resource
             'create' => CreateTrip::route('/create'),
             'view' => ViewTrip::route('/{record}'),
             'edit' => EditTrip::route('/{record}/edit'),
+            'readiness' => TripReadiness::route('/{record}/readiness'),
+            'lists' => TripLists::route('/{record}/lists'),
         ];
     }
 }

@@ -25,11 +25,11 @@ Admin role, and is the way back in if every Admin is ever lost.
 | Role | Can |
 | --- | --- |
 | Admin | Everything, including staff accounts, settings and the audit trail. Needs an authenticator app. |
-| Operations | Reference data, islands, trips, pilgrims and documents, bookings and recording payments. |
-| Finance | Exchange rates, accounts, verifying and refunding payments, discounts, and from phase 6 the ledger. Needs an authenticator app. |
-| Registration | Islands (read), pilgrim registration and documents, bookings and recording payments. |
-| Group leader | Checklist ticks, pilgrims and bookings (read), additional trips and recording the riyal paid for them; from phase 4, their bus. |
-| Read only | Reports and lists, no changes. |
+| Operations | Reference data, islands, trips, pilgrims and documents, bookings and recording payments, buses, rooms, visas, cards and lists. |
+| Finance | Exchange rates, accounts, verifying and refunding payments, discounts, lists and the readiness board, and from phase 6 the ledger. Needs an authenticator app. |
+| Registration | Islands (read), pilgrim registration and documents, bookings and recording payments, visa statuses, printing cards, lists. |
+| Group leader | Checklist ticks, pilgrims and bookings (read), additional trips and recording the riyal paid for them, buses and rooms (read), the Scan page and bus check-in, lists. |
+| Read only | Lists and the readiness board, no changes. |
 
 Roles are given on the Staff screen. Deactivating an account keeps it and its
 history but lets nobody sign in with it. The last Admin cannot be deleted or
@@ -167,6 +167,51 @@ better; that is the owner's call because the image leaves the server.
   what a booking owes; `/slips` lists what waits for Finance; a recorded
   payment is announced to everyone who may verify.
 
+## On the road: buses, rooms, lists and cards
+
+- **Travellers** on the trip page lists everyone on a live booking, one row
+  each, with bus, rooms, visa, copies and ticket. Select rows for the bulk
+  actions: put on a bus, take off, put in a room, mark visa (with agent and
+  date), add to an additional trip, print customer cards or luggage tags,
+  export the selection as CSV. *Visa / ticket* on a row edits that person's
+  ticket number, seat and visa details.
+- **Buses**: add Bus 1, Bus 2… with a capacity and a leader (staff or a
+  name and phone). *Add people* on a bus, or the bulk action above. The
+  checker reports a bus over capacity, a bus with no leader, a family split
+  across buses, and confirmed travellers on no bus.
+- **Rooms** belong to a hotel stay: number, beds, and whether it is a
+  men's, women's or family room. *Put people in* a room, or *Room a family*
+  to put one booking into one family room (a new one is made if none has
+  the beds). *Check rooming* reports over capacity, mixed gender in a
+  non-family room, an undesignated room, a child with no adult of their
+  family in the room, somebody in two rooms, confirmed travellers with no
+  room, and anyone in a room with fewer beds than they paid for.
+- **Readiness** (on the trip page) is the morning screen: what blocks the
+  trip (visas not issued, passports expiring inside the window, missing
+  passport copies, blocking checklist items) and what needs attention
+  (unverified copies, ID-passport mismatches, late visas, missing tickets,
+  balances due, bus and rooming problems, overdue checklist items). It is
+  computed every time, never stored. A trip cannot be marked *travelling*
+  while something blocks unless an Admin overrides with a reason, which is
+  recorded on the transition. Today lists trips departing within 45 days
+  that are not ready; `/ready` on Telegram says the same.
+- **Lists** (on the trip page) prints or exports: the manifest in four
+  shapes (office, airline, hotel, ministry), the payment status list, the
+  documents-owed list, one list per bus with a tick column for boarding,
+  one rooming list per hotel in an office copy and a hotel copy (no phone
+  numbers or families), and participant lists per additional trip. PDF
+  prints; CSV opens in a spreadsheet. Every print is audited.
+- **Customer cards and luggage tags** carry the logo, trip, names in
+  English and Dhivehi, bus, rooms, the office phones and a QR code. The QR
+  holds a random token, never an ID number. Cards print eight to a sheet
+  with the photo; tags two to a sheet in large print. Printing again reuses
+  the same card; *reissue* revokes a lost one.
+- **Scan** (menu, and the bottom bar for group leaders): scanning a QR with
+  the phone's camera app opens the traveller here; the Camera button reads
+  QR codes in Chrome on Android; the serial under the QR can be typed. The
+  page shows bus, rooms, balance, visa and copies, and *Check in* marks the
+  person on their bus.
+
 ## Settings in `.env`
 
 | Key | Meaning |
@@ -176,6 +221,7 @@ better; that is the owner's call because the image leaves the server.
 | `PORTAL_SECOND_FACTOR_REQUIRED` | `true` by default. `false` only for a first sign-in on a phone with no authenticator app yet, and back to `true` the same day. |
 | `APP_TIMEZONE` | `Indian/Maldives` by default. |
 | `BOOKING_HOLD_DAYS` | How long a draft booking keeps its seats. `7` by default. |
+| `VISA_SLA_DAYS` | Days after a visa is submitted before the board calls it late. `7` by default. |
 | `INVOICE_TAX_NOTE`, `INVOICE_TERMS_NOTE` | Printed in the footer of invoices and receipts when set. |
 
 ## Conventions for the code

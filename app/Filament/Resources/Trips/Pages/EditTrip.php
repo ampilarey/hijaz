@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Trips\Pages;
 use App\Exceptions\IllegalTripTransition;
 use App\Filament\Resources\Trips\TripResource;
 use App\Models\Trip;
+use App\Services\Operations\Readiness;
 use App\Services\Trips\RouteBuilder;
 use App\Services\Trips\TripCopier;
 use Filament\Actions\Action;
@@ -34,6 +35,8 @@ class EditTrip extends EditRecord
         /** @var Trip $trip */
         $trip = $this->getRecord();
 
+        $blockers = in_array(Trip::TRAVELLING, $trip->allowedTransitions(), true) ? app(Readiness::class)->blockers($trip) : [];
+
         $transitions = collect($trip->allowedTransitions())->map(fn (string $to): Action => Action::make('to_'.$to)
             ->label(match ($to) {
                 Trip::OPEN => 'Open for registration',
@@ -46,8 +49,23 @@ class EditTrip extends EditRecord
             ->color($to === Trip::CANCELLED ? 'danger' : 'primary')
             ->requiresConfirmation()
             ->authorize('transition', $trip)
-            ->schema($to === Trip::CANCELLED ? [Textarea::make('reason')->required()->rows(2)] : [])
-            ->action(function (array $data) use ($trip, $to): void {
+            ->modalDescription(fn (): ?string => $to === Trip::TRAVELLING && $blockers !== []
+                ? 'The readiness board says this trip cannot travel yet: '.implode('; ', $blockers).'. Only an Admin may override, and the override is recorded.'
+                : null)
+            ->schema($to === Trip::CANCELLED || ($to === Trip::TRAVELLING && $blockers !== [])
+                ? [Textarea::make('reason')->label($to === Trip::TRAVELLING ? 'Why it may travel anyway' : 'Reason')->required()->rows(2)]
+                : [])
+            ->action(function (array $data) use ($trip, $to, $blockers): void {
+                if ($to === Trip::TRAVELLING && $blockers !== []) {
+                    if (! auth()->user()?->can('trip.override')) {
+                        Notification::make()->danger()->title('An Admin has to override the readiness board for this trip')->send();
+
+                        return;
+                    }
+
+                    $data['reason'] = mb_substr('Override by '.auth()->user()->name.': '.($data['reason'] ?? '').' (blocked by: '.implode('; ', $blockers).')', 0, 255);
+                }
+
                 try {
                     $trip->transitionTo($to, $data['reason'] ?? null);
                 } catch (IllegalTripTransition $e) {
@@ -61,6 +79,12 @@ class EditTrip extends EditRecord
             }))->values()->all();
 
         return [
+            Action::make('readiness')->label('Readiness')->icon('heroicon-o-clipboard-document-check')->color('gray')
+                ->visible(fn (): bool => (bool) auth()->user()?->can('readiness.view'))
+                ->url(TripResource::getUrl('readiness', ['record' => $trip])),
+            Action::make('lists')->label('Lists')->icon('heroicon-o-document-text')->color('gray')
+                ->visible(fn (): bool => (bool) auth()->user()?->can('list.view'))
+                ->url(TripResource::getUrl('lists', ['record' => $trip])),
             ...$transitions,
             ActionGroup::make([
                 Action::make('copy')
