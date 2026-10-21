@@ -9,7 +9,7 @@
 # for the tip to reach it and refuses to deploy anything else.
 #
 # The checkout is wherever this script lives, so the same file serves any
-# path without editing: /home/<account>/hijaz.rihla.mv on cPanel.
+# path without editing: /home/<account>/hijaz on cPanel.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

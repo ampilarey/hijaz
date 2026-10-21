@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install (or refresh) the one-minute Laravel scheduler cron. Safe to re-run.
 #
-#   bash /home/<account>/hijaz.rihla.mv/scripts/install-scheduler-cron.sh
+#   bash /home/<account>/hijaz/scripts/install-scheduler-cron.sh
 #
 # The scheduler is what runs queued jobs on cPanel (no long-running worker is
 # possible there): routes/console.php runs queue:work --stop-when-empty once

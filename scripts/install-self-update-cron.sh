@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install (or refresh) the one-minute auto-deploy fallback cron. Safe to re-run.
 #
-#   bash /home/<account>/hijaz.rihla.mv/scripts/install-self-update-cron.sh
+#   bash /home/<account>/hijaz/scripts/install-self-update-cron.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

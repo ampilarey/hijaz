@@ -21,7 +21,7 @@ set -euo pipefail
 export PATH="$HOME/bin:/usr/local/bin:/opt/cpanel/ea-php84/root/usr/bin:/opt/cpanel/composer/bin:/usr/bin:/bin:$PATH"
 
 REPO_URL="${REPO_URL:-https://github.com/ampilarey/hijaz.git}"
-ROOT="${ROOT:-$HOME/hijaz.rihla.mv}"
+ROOT="${ROOT:-$HOME/hijaz}"
 HOST="${HOST:-hijaz.rihla.mv}"
 
 say()  { echo; echo "==> $*"; }

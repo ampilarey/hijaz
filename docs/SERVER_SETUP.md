@@ -5,8 +5,9 @@ Everything here happens once. After it, every merge to `main` deploys itself
 
 The site runs on the same cPanel account as `rihla.mv` and `test.rihla.mv`
 (account `rihla`, home `/home/rihla`, PHP 8.4, MySQL). The checkout lives at
-`/home/rihla/hijaz.rihla.mv` and the subdomain's document root points at its
-`public/` folder, exactly like `test.rihla.mv`.
+`/home/rihla/hijaz` (the folder cPanel made for the subdomain) and the
+subdomain's document root points at its `public/` folder, exactly like
+`test.rihla.mv`.
 
 Already done: the `hijaz.rihla.mv` subdomain exists in cPanel, and the GitHub
 repository `ampilarey/hijaz` exists.
@@ -59,15 +60,15 @@ has not reported. It is safe to run again.
 Find `hijaz.rihla.mv` → **Manage** → **Document Root** → set to
 
 ```
-hijaz.rihla.mv/public
+hijaz/public
 ```
 
-(cPanel shows it relative to `/home/rihla`; the full path is
-`/home/rihla/hijaz.rihla.mv/public`.) Save.
+(cPanel shows it relative to `/home/rihla`; it currently says `/hijaz`, and
+the full new path is `/home/rihla/hijaz/public`.) Save.
 
-cPanel created `/home/rihla/hijaz.rihla.mv` as an empty folder when you made
+cPanel created `/home/rihla/hijaz` as an empty folder when you made
 the subdomain. The setup script moved that empty folder aside
-(`hijaz.rihla.mv.cpanel-default.<timestamp>`) and cloned the repository in its
+(`hijaz.cpanel-default.<timestamp>`) and cloned the repository in its
 place, so the path is the same but now holds the application.
 
 ## 5. SSL (cPanel → SSL/TLS Status)
@@ -93,7 +94,7 @@ GitHub → `ampilarey/hijaz` → **Settings → Environments → New environment
 - **Add environment secret**: name `DEPLOY_WEBHOOK_SECRET`, value = the secret
   the setup script printed in step 3.
 
-Lost it? On the server: `grep DEPLOY_WEBHOOK_SECRET /home/rihla/hijaz.rihla.mv/.env`
+Lost it? On the server: `grep DEPLOY_WEBHOOK_SECRET /home/rihla/hijaz/.env`
 
 Optionally, on the same page, add yourself under **Required reviewers** if you
 want to approve each deploy by hand. Leave it empty for fully automatic.
@@ -119,14 +120,14 @@ Both green, and https://hijaz.rihla.mv serves that commit. On the server,
 
 | Thing | Where |
 |---|---|
-| Application | `/home/rihla/hijaz.rihla.mv` |
-| Document root | `/home/rihla/hijaz.rihla.mv/public` |
-| Environment file | `/home/rihla/hijaz.rihla.mv/.env` (never in git) |
+| Application | `/home/rihla/hijaz` |
+| Document root | `/home/rihla/hijaz/public` |
+| Environment file | `/home/rihla/hijaz/.env` (never in git) |
 | Deploy log | `/home/rihla/hijaz-deploy.log` |
-| Scheduler log | `/home/rihla/schedule-hijaz.rihla.mv.log` |
-| Cron: scheduler | `* * * * * cd /home/rihla/hijaz.rihla.mv && php artisan schedule:run` |
-| Cron: deploy fallback | `* * * * * /home/rihla/hijaz.rihla.mv/scripts/self-update.sh` |
-| Uploaded files | `/home/rihla/hijaz.rihla.mv/storage/app/public` (served via `public/storage`) |
+| Scheduler log | `/home/rihla/schedule-hijaz.log` |
+| Cron: scheduler | `* * * * * cd /home/rihla/hijaz && php artisan schedule:run` |
+| Cron: deploy fallback | `* * * * * /home/rihla/hijaz/scripts/self-update.sh` |
+| Uploaded files | `/home/rihla/hijaz/storage/app/public` (served via `public/storage`) |
 
 `crontab -l` lists both lines; the existing `rihla.mv` and `test.rihla.mv`
 lines are left untouched.
