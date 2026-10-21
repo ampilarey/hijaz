@@ -1,59 +1,91 @@
 # Hijaz brand
 
-Hijaz Hajj & Umrah is a Rihla Travels brand. The logo is the one the business
-already uses: a green eight-pointed star, the Kaaba, and the red wordmark. It
-carries no contact details.
+Hijaz Hajj & Umrah is its own company. It is not part of Rihla; the website is
+only hosted on the `hijaz.rihla.mv` subdomain. Nothing a visitor sees should
+mention Rihla.
 
-## Files
+## Contact details
 
-All in `public/images/brand/`, served as-is (no build step).
+Recorded in `config/hijaz.php` for use on the site later. They are not shown
+anywhere yet, and they never go in the logo.
+
+| | |
+| --- | --- |
+| Email | hijazumra@gmail.com |
+| Phone | 977 5123 (+960 9775123) |
+| Phone | 990 6869 (+960 9906869) |
+
+## Logo
+
+The logo is an exact redraw of the company's existing artwork, with the email
+and phone lines removed. The original is kept at
+`docs/brand/original-logo.png` (contact lines cropped off) as the reference.
+
+- **Star:** two equal squares, one turned 45 degrees, drawn as one green outline.
+  The bottom of the star is hidden behind the lettering, so the two side bars
+  end in a slanted cut.
+- **Kaaba:** flat front view with a peaked roof, two thin light stripes running
+  parallel to the roof, and a base that rises slightly to the centre.
+- **Lettering:** "HIJAZ" over "Hajj & Umrah" in a bold Times-style serif, red.
+
+Files, all in `public/images/brand/`:
 
 | File | Use |
 | --- | --- |
-| `hijaz-logo.svg` / `.png` | Primary stacked logo. Print, social, documents. |
-| `hijaz-logo-horizontal.svg` / `.png` | Site header, email signatures, anything wide and short. |
-| `hijaz-mark.svg` / `.png` | Star and Kaaba only. Avatars, app icons, watermarks. |
-| `favicon.svg` | Browser tab icon, also exported to `public/favicon.ico`, `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`. |
+| `hijaz-logo.svg` / `.png` | Primary logo, transparent background. Website, documents, print. |
+| `hijaz-logo-on-blue.svg` / `.png` | The logo on its original light blue background. Social media, sharing previews. |
+| `hijaz-mark.svg` / `.png` | Star and Kaaba only, with the star closed. Profile pictures, app icons. |
+| `favicon.svg` | Browser tab icon. Also exported as `public/favicon.ico`, `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`. |
 
-The SVGs are the masters. Text is outlined, so they need no font installed.
-Regenerate everything after editing `scripts/brand/build-logo.py`:
+The SVGs are the masters; use them wherever possible. The PNGs are 1200 px wide
+(the mark is 1024 px square).
+
+### Regenerating
+
+`scripts/brand/build-logo.py` draws everything from measurements of the
+original, in the original's pixel coordinates, so a render can be laid over
+`docs/brand/original-logo.png` to check it. It needs `fonttools` and FreeSerif
+Bold (`fonts-freefont-ttf`).
 
 ```bash
-pip install fonttools                       # once; needs Liberation Serif Bold installed
 python3 scripts/brand/build-logo.py public/images/brand
 node scripts/brand/render-svg.mjs public/images/brand/hijaz-logo.svg public/images/brand/hijaz-logo.png 1200 transparent
 ```
 
 ## Colours
 
-Defined as Tailwind tokens in `resources/css/app.css` (`bg-brand-green`,
-`text-brand-red`, and so on).
+Sampled from the original logo. Defined as Tailwind tokens in
+`resources/css/app.css`, so classes like `bg-brand-green` and `text-brand-red`
+work everywhere.
 
 | Token | Hex | Use |
 | --- | --- | --- |
-| `brand-green` | `#17A24A` | Star, primary buttons, links. |
-| `brand-green-dark` | `#0F7A37` | Hover states, small text on light backgrounds. |
-| `brand-green-light` | `#E6F5EB` | Tinted panels. |
-| `brand-red` | `#E0262B` | Wordmark, headings, accents. Not for body text. |
-| `brand-red-dark` | `#B31D21` | Hover states. |
-| `brand-gold` | `#D4A72C` | Kaaba band, small highlights. |
-| `brand-ink` | `#1E1E1E` | Body text, Kaaba. |
-| `brand-stone` | `#6A6A6A` | Secondary text. |
-| `brand-sand` | `#F7F4EE` | Page background. |
+| `brand-green` | `#01A85A` | The star. Large shapes and icons. Too light for small text. |
+| `brand-green-dark` | `#017A42` | Buttons with white text, links, small green text. |
+| `brand-green-light` | `#E6F6EE` | Tinted panels. |
+| `brand-red` | `#EC3237` | The wordmark. Large headings only. |
+| `brand-red-dark` | `#C81E24` | Small red text. |
+| `brand-ink` | `#353334` | The Kaaba. Body text. |
+| `brand-muted` | `#5E5C5D` | Secondary text. |
+| `brand-sky` | `#C7D9F1` | The logo's original background. Feature panels. |
+| `brand-sky-light` | `#F1F6FC` | Page background. |
+
+The logo green and red are lighter than accessible small text allows, which is
+why the darker shades exist. Use the logo colours for the logo, shapes, and
+headings of 24 px and up.
 
 ## Type
 
-- Headings: Tinos bold (`font-display`), the same design as the wordmark.
-- Body: Instrument Sans (`font-sans`).
+- **Headings:** Tinos bold (`font-display`), the Times design the wordmark uses.
+- **Body:** Instrument Sans (`font-sans`).
 
 Both load from Bunny Fonts through `vite.config.js`.
 
 ## Rules
 
-- Never add the email address or phone numbers to the logo. They belong in the
-  page footer and contact page.
-- Keep the star green and the wordmark red. On dark or photographic backgrounds
-  place the logo on a white panel rather than recolouring it.
-- Leave clear space around the logo of at least the height of the "HIJAZ"
-  letters.
+- Never put the email address or phone numbers in the logo.
+- Never mention Rihla on the site.
+- Keep the star green and the lettering red. On dark backgrounds or photos,
+  place the logo on a white or light blue panel instead of recolouring it.
+- Leave clear space around the logo of at least the height of "HIJAZ".
 - Do not stretch, rotate, or add effects.

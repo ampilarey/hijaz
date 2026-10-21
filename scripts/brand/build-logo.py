@@ -1,89 +1,163 @@
-"""Build the Hijaz logo SVGs. Text is converted to outlines (Liberation Serif Bold,
-metric-compatible with the Times New Roman Bold of the original artwork) so the
-logo renders identically everywhere without a font."""
-import math, sys, os
-from fontTools.ttLib import TTFont
+"""Build the Hijaz logo files from the original artwork.
+
+The original (docs/brand/original-logo.png, the logo as the business supplied
+it, with the contact lines cropped off) is the reference. Everything is drawn
+in its pixel coordinates so the output can be laid over it and compared:
+
+- The star and the Kaaba are geometric, so they are rebuilt from measurements
+  of the original as exact shapes.
+- The lettering is redrawn from a Times-style font, with every letter scaled
+  into the exact box it occupies in the original.
+
+Usage: python3 scripts/brand/build-logo.py <output dir>
+Needs: pip install fonttools, and FreeSerif Bold (Debian/Ubuntu: fonts-freefont-ttf)
+"""
+import math
+import os
+import sys
+
+from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.pens.transformPen import TransformPen
+from fontTools.ttLib import TTFont
 
 OUT = sys.argv[1]
-GREEN, RED = "#17A24A", "#E0262B"
-DARK_L, DARK_R, DARK_T = "#3B3B3B", "#1E1E1E", "#2C2C2C"
-GOLD_L, GOLD_R = "#D4A72C", "#B88D20"
-STRIPE_L, STRIPE_R = "#6A6A6A", "#4A4A4A"
 
-font = TTFont("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf")
-gs = font.getGlyphSet(); cmap = font.getBestCmap(); upm = font["head"].unitsPerEm
+# Colours sampled from the original (median of solid areas).
+GREEN = "#01A85A"
+RED = "#EC3237"
+KAABA = "#353334"
+BACKGROUND = "#C7D9F1"
 
-def text_paths(text, size, x_center, baseline, tracking=0.0, fill=RED):
-    s = size / upm
-    glyphs = [cmap[ord(c)] for c in text]
-    adv = [gs[g].width * s for g in glyphs]
-    total = sum(adv) + tracking * size * (len(text) - 1)
-    x = x_center - total / 2
-    out = []
-    for g, a, c in zip(glyphs, adv, text):
-        if c != " ":
-            pen = SVGPathPen(gs); gs[g].draw(pen)
-            out.append(f'<path transform="translate({x:.2f} {baseline}) scale({s:.5f} {-s:.5f})" d="{pen.getCommands()}"/>')
-        x += a + tracking * size
-    return f'<g fill="{fill}">' + "".join(out) + "</g>"
+# ---------------------------------------------------------------- star
+# Two equal squares, one turned 45 degrees, drawn as a single outline.
+# Measured: centre (401.5, 204.75), square half-side 120.25, stroke 26.
+CX, CY, A, W = 401.5, 204.75, 120.25, 26.0
 
-def star_path(cx, cy, a):
-    r, i = a * math.sqrt(2), a * (math.sqrt(2) - 1)
-    pts = []
-    for k in range(8):
-        ang = k * math.pi / 4
-        pts.append((cx + r * math.cos(ang), cy + r * math.sin(ang)))          # outer point
-        # inner vertex between this point and the next, on the square edge
-        mid = ang + math.pi / 8
-        rad = math.hypot(a, i)
-        pts.append((cx + rad * math.cos(mid), cy + rad * math.sin(mid)))
+
+def star_points(a):
+    """The 16 vertices of the star outline whose square half-side is a,
+    clockwise from the top point."""
+    p, d = a * math.sqrt(2), a * (math.sqrt(2) - 1)
+    q = [(0, -p), (d, -a), (a, -a), (a, -d), (p, 0), (a, d), (a, a), (d, a),
+         (0, p), (-d, a), (-a, a), (-a, d), (-p, 0), (-a, -d), (-a, -a), (-d, -a)]
+    return [(CX + x, CY + y) for x, y in q]
+
+
+def star_shape():
+    """The star as it appears in the original: the bottom is hidden behind the
+    lettering, so each side bar ends in a slanted cut and the star is open
+    between them."""
+    outer, inner = star_points(A), star_points(A - W)
+    # Outer contour from the bottom of the right bar, clockwise over the top,
+    # to the bottom of the left bar: vertices 5 (right, below the right point)
+    # back round through 0 (top) to 11 (left, below the left point).
+    right_out, right_in = (CX + A, 323.6), (CX + A - W, 337.8)
+    left_out, left_in = (CX - A, 323.6), (CX - A + W, 337.8)
+    pts = [right_in, right_out]
+    pts += [outer[i] for i in (5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11)]
+    pts += [left_out, left_in]
+    pts += [inner[i] for i in (11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5)]
     return "M" + " L".join(f"{x:.2f} {y:.2f}" for x, y in pts) + " Z"
 
-def star(cx, cy, a, sw):
-    return f'<path d="{star_path(cx, cy, a)}" fill="none" stroke="{GREEN}" stroke-width="{sw}" stroke-linejoin="miter" stroke-miterlimit="6"/>'
 
-def kaaba(cx, cy, scale=1.0):
-    # local coords: front vertical edge at x=0, y=0 is the front top corner
-    L, R, H = -95, 50, 105           # left extent, right extent, face height
-    tl, tr = -22, -35                # rise of the top edge at the left / right extents
-    def poly(pts, fill):
-        return f'<polygon fill="{fill}" points="{" ".join(f"{x:.1f},{y:.1f}" for x, y in pts)}"/>'
-    def band(d1, d2, fl, fr):
-        return (poly([(0, d1), (L, tl + d1), (L, tl + d2), (0, d2)], fl)
-              + poly([(0, d1), (R, tr + d1), (R, tr + d2), (0, d2)], fr))
-    body = (poly([(0, 0), (L, tl), (L + R, tl + tr), (R, tr)], DARK_T)
-          + poly([(0, 0), (L, tl), (L, tl + H), (0, H)], DARK_L)
-          + poly([(0, 0), (R, tr), (R, tr + H), (0, H)], DARK_R)
-          + band(14, 19, STRIPE_L, STRIPE_R)
-          + band(25, 38, GOLD_L, GOLD_R))
-    # centre the drawing: its bbox spans x in [L, R], y in [tl+tr, H]
-    ox, oy = (L + R) / 2, ((tl + tr) + H) / 2
-    return f'<g transform="translate({cx} {cy}) scale({scale}) translate({-ox} {-oy})">{body}</g>'
+# ---------------------------------------------------------------- Kaaba
+# A front view: the roof peaks in the middle, two thin gaps run parallel to
+# the roof line, and the base rises slightly to the centre.
+K_LEFT, K_RIGHT, K_MID = 330.5, 471.5, 401.0
+ROOF_TOP, ROOF_SLOPE = 127.4, 0.277          # y = top + slope * |x - mid|
+BASE_MID, BASE_SLOPE = 232.5, 0.0993
+BANDS = [(0, 12.5), (19.2, 30.3), (36.6, None)]   # dark bands, offsets below the roof line
 
-def svg(w, h, body, title):
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-labelledby="t">'
-            f'<title id="t">{title}</title>{body}</svg>\n')
 
-# --- Mark: star with the Kaaba inside (square) ---
-mark_body = star(300, 300, 150, 26) + kaaba(300, 300, 1.15)
-open(f"{OUT}/hijaz-mark.svg", "w").write(svg(600, 600, mark_body, "Hijaz Hajj &amp; Umrah"))
+def kaaba_shape():
+    half = K_RIGHT - K_MID
 
-# --- Stacked logo: faithful to the original, wordmark across the lower star ---
-cx = 300
-body = (star(cx, 270, 165, 28)
-        + kaaba(cx, 205, 1.05)
-        + text_paths("HIJAZ", 108, cx, 395, tracking=0.03)
-        + text_paths("Hajj & Umrah", 52, cx, 452))
-open(f"{OUT}/hijaz-logo.svg", "w").write(svg(600, 560, body, "Hijaz Hajj &amp; Umrah"))
+    def chevron(offset):  # left, middle, right points of a line parallel to the roof
+        return [(K_LEFT, ROOF_TOP + ROOF_SLOPE * half + offset),
+                (K_MID, ROOF_TOP + offset),
+                (K_RIGHT, ROOF_TOP + ROOF_SLOPE * half + offset)]
 
-# --- Horizontal lockup: mark on the left, wordmark on the right ---
-body = (star(130, 130, 95, 17) + kaaba(130, 130, 0.72)
-        + text_paths("HIJAZ", 104, 455, 128, tracking=0.03)
-        + text_paths("Hajj & Umrah", 48, 455, 184))
-open(f"{OUT}/hijaz-logo-horizontal.svg", "w").write(svg(650, 260, body, "Hijaz Hajj &amp; Umrah"))
+    base = [(K_RIGHT, BASE_MID + BASE_SLOPE * half), (K_MID, BASE_MID),
+            (K_LEFT, BASE_MID + BASE_SLOPE * half)]
+    paths = []
+    for top, bottom in BANDS:
+        lower = base if bottom is None else list(reversed(chevron(bottom)))
+        pts = chevron(top) + lower
+        paths.append("M" + " L".join(f"{x:.2f} {y:.2f}" for x, y in pts) + " Z")
+    return "".join(paths)
 
-# --- Favicon: mark only, drawn large so it reads at 16px ---
-body = star(32, 32, 17, 3.2) + kaaba(32, 32, 0.135)
-open(f"{OUT}/favicon.svg", "w").write(svg(64, 64, body, "Hijaz"))
-print("ok")
+
+# ---------------------------------------------------------------- lettering
+# The original is set in a bold Times-style serif. Tracing it from a 37 px high
+# JPEG gives lumpy letters, so each letter is drawn from FreeSerif Bold (a
+# Times design) and scaled into the exact box that letter fills in the
+# original. Of 18 serif fonts tried this way it overlapped the original best.
+FONT = os.environ.get("HIJAZ_LOGO_FONT", "/usr/share/fonts/truetype/freefont/FreeSerifBold.ttf")
+
+# Ink box of every letter in the original: x0, x1, y0, y1 in its pixels.
+LINES = [
+    ("HIJAZ", [(315, 355, 258, 296), (360, 378, 258, 296), (381, 406, 258, 297),
+               (411, 449, 258, 296), (453, 488, 258, 296)]),
+    ("Hajj&Umrah", [(314, 331, 309, 329), (335, 345, 315, 329), (347, 354, 309, 335),
+                    (356, 363, 309, 335), (375, 394, 309, 329), (406, 421, 309, 329),
+                    (426, 446, 315, 329), (450, 459, 316, 329), (462, 473, 315, 329),
+                    (476, 488, 309, 329)]),
+]
+
+
+def lettering_shape():
+    font = TTFont(FONT)
+    glyphs, cmap = font.getGlyphSet(), font.getBestCmap()
+    out = []
+    for text, boxes in LINES:
+        for ch, (x0, x1, y0, y1) in zip(text, boxes):
+            glyph = glyphs[cmap[ord(ch)]]
+            bounds = BoundsPen(glyphs)
+            glyph.draw(bounds)
+            gx0, gy0, gx1, gy1 = bounds.bounds
+            # Pixel x0 is partly covered, so the ink edge sits inside it.
+            left, right, top, bottom = x0 + 0.4, x1 + 0.6, y0 + 0.4, y1 + 0.6
+            sx, sy = (right - left) / (gx1 - gx0), (bottom - top) / (gy1 - gy0)
+            pen = SVGPathPen(glyphs)
+            glyph.draw(TransformPen(pen, (sx, 0, 0, -sy, left - gx0 * sx, top + gy1 * sy)))
+            out.append(pen.getCommands())
+    return " ".join(out)
+
+
+# ---------------------------------------------------------------- output
+def svg(view, body, title, background=None):
+    vx, vy, vw, vh = view
+    bg = f'<rect x="{vx}" y="{vy}" width="{vw}" height="{vh}" fill="{BACKGROUND}"/>' if background else ""
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx} {vy} {vw} {vh}" '
+            f'width="{vw * 2:g}" height="{vh * 2:g}" role="img" aria-labelledby="t">'
+            f'<title id="t">{title}</title>{bg}{body}</svg>\n')
+
+
+star = f'<path fill="{GREEN}" d="{star_shape()}"/>'
+kaaba = f'<path fill="{KAABA}" d="{kaaba_shape()}"/>'
+letters = f'<path fill="{RED}" d="{lettering_shape()}"/>'
+
+LOGO_VIEW = (216, 20, 371, 334)     # the star plus an even margin
+TITLE = "Hijaz Hajj &amp; Umrah"
+files = {
+    "hijaz-logo.svg": svg(LOGO_VIEW, star + kaaba + letters, TITLE),
+    "hijaz-logo-on-blue.svg": svg(LOGO_VIEW, star + kaaba + letters, TITLE, background=True),
+}
+
+# Mark: the star and Kaaba without lettering. With the text gone the star is
+# drawn whole, so it reads as a closed shape at small sizes.
+full_star = (f'<path fill="{GREEN}" fill-rule="evenodd" d="'
+             + "M" + " L".join(f"{x:.2f} {y:.2f}" for x, y in star_points(A)) + " Z "
+             + "M" + " L".join(f"{x:.2f} {y:.2f}" for x, y in star_points(A - W)) + ' Z"/>')
+# Move the Kaaba down to the centre of the closed star.
+k_centre = ((ROOF_TOP + BASE_MID + BASE_SLOPE * (K_RIGHT - K_MID)) / 2)
+mark_body = full_star + f'<g transform="translate(0 {CY - k_centre:.2f})">{kaaba}</g>'
+MARK_VIEW = (CX - 185, CY - 185, 370, 370)
+files["hijaz-mark.svg"] = svg(MARK_VIEW, mark_body, TITLE)
+files["favicon.svg"] = svg(MARK_VIEW, mark_body, "Hijaz")
+
+for name, content in files.items():
+    with open(os.path.join(OUT, name), "w") as f:
+        f.write(content)
+print("wrote", ", ".join(files))

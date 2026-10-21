@@ -1,7 +1,9 @@
 # Hijaz
 
-The Laravel application behind **https://hijaz.rihla.mv**, a subdomain of
-[rihla.mv](https://rihla.mv).
+The website of **Hijaz Hajj & Umrah**, a Laravel application served at
+https://hijaz.rihla.mv. Hijaz is its own company; the site is only hosted on a
+rihla.mv subdomain. Brand and contact details are in
+[docs/BRAND.md](docs/BRAND.md).
 
 The website itself is not written yet. What is here is the foundation it will
 be built on: a Laravel 13 skeleton, CI, and the same auto-deploy pipeline that
@@ -11,6 +13,7 @@ runs `test.rihla.mv`.
 |---|---|
 | [docs/SERVER_SETUP.md](docs/SERVER_SETUP.md) | One-time cPanel setup: database, document root, SSL, first install, GitHub secret |
 | [docs/AUTO_DEPLOY.md](docs/AUTO_DEPLOY.md) | How a merge to `main` reaches the site, and what to check when it does not |
+| [docs/BRAND.md](docs/BRAND.md) | Logo files, colours, type, and the business contact details |
 
 ## Local development
 

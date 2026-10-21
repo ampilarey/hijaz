@@ -3,6 +3,10 @@
 Hijaz is a Laravel 13 (PHP 8.3+) application served from cPanel shared hosting
 at https://hijaz.rihla.mv. It deploys itself from `main` (docs/AUTO_DEPLOY.md).
 
+Hijaz Hajj & Umrah is its own company, not part of Rihla. The site is only
+hosted on a rihla.mv subdomain, so `rihla` appears in server paths and the
+domain but never in anything visitors see. Brand rules: docs/BRAND.md.
+
 ## Facts that shape every change
 
 - **The host has no Node.** `public/build` is committed and CI fails when it is

@@ -10,19 +10,19 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source not '../../public/build';
 
-/* Brand tokens. The values are documented in docs/BRAND.md; change them there too. */
+/* Brand tokens, sampled from the original logo. docs/BRAND.md explains each one. */
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
     --font-display: 'Tinos', 'Times New Roman', Times, serif;
 
-    --color-brand-green: #17a24a;
-    --color-brand-green-dark: #0f7a37;
-    --color-brand-green-light: #e6f5eb;
-    --color-brand-red: #e0262b;
-    --color-brand-red-dark: #b31d21;
-    --color-brand-gold: #d4a72c;
-    --color-brand-ink: #1e1e1e;
-    --color-brand-stone: #6a6a6a;
-    --color-brand-sand: #f7f4ee;
+    --color-brand-green: #01a85a;
+    --color-brand-green-dark: #017a42;
+    --color-brand-green-light: #e6f6ee;
+    --color-brand-red: #ec3237;
+    --color-brand-red-dark: #c81e24;
+    --color-brand-ink: #353334;
+    --color-brand-muted: #5e5c5d;
+    --color-brand-sky: #c7d9f1;
+    --color-brand-sky-light: #f1f6fc;
 }
