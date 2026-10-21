@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Trips\RelationManagers;
 
 use App\Models\PriceTier;
 use App\Models\TripHotel;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -52,7 +53,7 @@ class HotelsRelationManager extends RelationManager
             ])
             ->defaultSort('check_in_on')
             ->headerActions([CreateAction::make()->label('Add hotel')])
-            ->recordActions([EditAction::make(), DeleteAction::make()])
+            ->recordActions([ActionGroup::make([EditAction::make(), DeleteAction::make()])])
             ->emptyStateHeading('No hotels yet');
     }
 }

@@ -8,6 +8,7 @@ use App\Filament\Support\TripOptions;
 use App\Models\ExcursionBooking;
 use App\Models\TripExcursion;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -38,11 +39,13 @@ class ExcursionBookingsTable
                 SelectFilter::make('status')->options([ExcursionBooking::OPEN => 'Open', ExcursionBooking::PAID => 'Paid', ExcursionBooking::CANCELLED => 'Cancelled']),
             ])
             ->recordActions([
-                PaymentActions::record(fn (?ExcursionBooking $record) => $record, 'Pay')->visible(fn (ExcursionBooking $record): bool => $record->status === ExcursionBooking::OPEN && $record->total_minor > 0),
-                Action::make('invoice')->label('Invoice')->icon('heroicon-o-document-text')->color('gray')
-                    ->url(fn (ExcursionBooking $record): string => route('excursion-bookings.invoice', $record), shouldOpenInNewTab: true),
-                Action::make('booking')->label('Booking')->icon('heroicon-o-ticket')->color('gray')
-                    ->url(fn (ExcursionBooking $record): string => BookingResource::getUrl('view', ['record' => $record->booking_id])),
+                ActionGroup::make([
+                    PaymentActions::record(fn (?ExcursionBooking $record) => $record, 'Pay')->visible(fn (ExcursionBooking $record): bool => $record->status === ExcursionBooking::OPEN && $record->total_minor > 0),
+                    Action::make('invoice')->label('Invoice')->icon('heroicon-o-document-text')->color('gray')
+                        ->url(fn (ExcursionBooking $record): string => route('excursion-bookings.invoice', $record), shouldOpenInNewTab: true),
+                    Action::make('booking')->label('Booking')->icon('heroicon-o-ticket')->color('gray')
+                        ->url(fn (ExcursionBooking $record): string => BookingResource::getUrl('view', ['record' => $record->booking_id])),
+                ]),
             ])
             ->emptyStateHeading('No additional trips booked yet');
     }

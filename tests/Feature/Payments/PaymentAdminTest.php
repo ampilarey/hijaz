@@ -93,7 +93,7 @@ class PaymentAdminTest extends TestCase
         Http::assertSent(fn ($r): bool => str_ends_with($r->url(), '/sendMessage') && $r['chat_id'] === 700 && str_contains($r['text'], 'Payment to verify') && str_contains($r['text'], $payment->reference));
         Http::assertNotSent(fn ($r): bool => str_ends_with($r->url(), '/sendMessage') && $r['chat_id'] === 701);
 
-        $this->actingAs($finance)->get('/portal')->assertOk()->assertSee('1 payment(s) to verify');
+        $this->actingAs($finance)->get('/portal')->assertOk()->assertSee('<span class="hz-row__count">1</span>', false)->assertSee('payment to verify');
     }
 
     public function test_finance_verifies_from_the_queue_and_registration_cannot(): void

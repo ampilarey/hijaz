@@ -94,7 +94,7 @@
             @foreach ($travellers as $bp)
                 <li class="flex items-center justify-between gap-2 py-2">
                     <span><span class="font-medium">{{ $bp->pilgrim->name_en }}</span><span class="block text-brand-muted">{{ $bp->booking->customer->name }}{{ $bp->busGroup ? ' · '.$bp->busGroup->name : '' }}{{ $bp->roomAssignments->isNotEmpty() ? ' · '.$bp->roomAssignments->map(fn ($a) => ($a->room?->hotel?->cityLabel() ?? '').' '.($a->room?->label ?? ''))->implode(', ') : '' }}</span></span>
-                    @if ($bp->pilgrim->phone)<a href="tel:{{ $bp->pilgrim->phone }}" class="rounded-lg border border-brand-sky px-3 py-2">Call</a>@endif
+                    @if ($bp->pilgrim->phone)<a href="tel:{{ $bp->pilgrim->phone }}" class="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-brand-sky px-4">Call</a>@endif
                 </li>
             @endforeach
         </ul>

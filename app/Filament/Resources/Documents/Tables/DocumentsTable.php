@@ -7,6 +7,7 @@ use App\Filament\Support\DocumentActions;
 use App\Models\Document;
 use App\Models\Pilgrim;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -36,9 +37,11 @@ class DocumentsTable
                 SelectFilter::make('status')->options([Document::PENDING => 'Pending', Document::VERIFIED => 'Verified', Document::REJECTED => 'Rejected']),
             ])
             ->recordActions([
-                ...DocumentActions::forRecord(),
-                Action::make('pilgrim')->label('Pilgrim')->icon('heroicon-o-user')->color('gray')
-                    ->url(fn (Document $record): ?string => $record->documentable instanceof Pilgrim ? PilgrimResource::getUrl('edit', ['record' => $record->documentable]) : null),
+                ActionGroup::make([
+                    ...DocumentActions::forRecord(),
+                    Action::make('pilgrim')->label('Pilgrim')->icon('heroicon-o-user')->color('gray')
+                        ->url(fn (Document $record): ?string => $record->documentable instanceof Pilgrim ? PilgrimResource::getUrl('edit', ['record' => $record->documentable]) : null),
+                ]),
             ])
             ->emptyStateHeading('Nothing to check');
     }

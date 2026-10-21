@@ -10,6 +10,7 @@ use App\Models\Pilgrim;
 use App\Models\PriceTier;
 use App\Services\Bookings\BookingDesk;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
@@ -90,21 +91,23 @@ class PilgrimsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                EditAction::make()->label('Ticket / visa')->authorize($this->may('update')),
-                Action::make('open')->label('Pilgrim')->icon('heroicon-o-user')->color('gray')
-                    ->url(fn (BookingPilgrim $record): string => PilgrimResource::getUrl('edit', ['record' => $record->pilgrim])),
-                Action::make('remove')
-                    ->label('Remove')
-                    ->icon('heroicon-o-user-minus')
-                    ->color('danger')
-                    ->visible(fn (): bool => $booking->isLive() && $booking->pilgrims()->count() > 1)
-                    ->authorize($this->may('update'))
-                    ->requiresConfirmation()
-                    ->modalDescription('Their seat goes back to the pool and their fare comes off the booking.')
-                    ->action(function (BookingPilgrim $record, BookingDesk $desk): void {
-                        $desk->removePilgrim($record);
-                        Notification::make()->success()->title('Removed')->send();
-                    }),
+                ActionGroup::make([
+                    EditAction::make()->label('Ticket / visa')->authorize($this->may('update')),
+                    Action::make('open')->label('Pilgrim')->icon('heroicon-o-user')->color('gray')
+                        ->url(fn (BookingPilgrim $record): string => PilgrimResource::getUrl('edit', ['record' => $record->pilgrim])),
+                    Action::make('remove')
+                        ->label('Remove')
+                        ->icon('heroicon-o-user-minus')
+                        ->color('danger')
+                        ->visible(fn (): bool => $booking->isLive() && $booking->pilgrims()->count() > 1)
+                        ->authorize($this->may('update'))
+                        ->requiresConfirmation()
+                        ->modalDescription('Their seat goes back to the pool and their fare comes off the booking.')
+                        ->action(function (BookingPilgrim $record, BookingDesk $desk): void {
+                            $desk->removePilgrim($record);
+                            Notification::make()->success()->title('Removed')->send();
+                        }),
+                ]),
             ])
             ->emptyStateHeading('Nobody on this booking');
     }

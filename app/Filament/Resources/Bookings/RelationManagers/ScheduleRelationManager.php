@@ -6,6 +6,7 @@ use App\Filament\Forms\MoneyInput;
 use App\Models\Booking;
 use App\Models\PaymentSchedule;
 use App\Support\Currency;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -60,7 +61,7 @@ class ScheduleRelationManager extends RelationManager
             ])
             ->defaultSort('due_on')
             ->headerActions([CreateAction::make()->label('Add an instalment')->authorize($this->may('update'))])
-            ->recordActions([EditAction::make()->authorize($this->may('update')), DeleteAction::make()->authorize($this->may('update'))])
+            ->recordActions([ActionGroup::make([EditAction::make()->authorize($this->may('update')), DeleteAction::make()->authorize($this->may('update'))])])
             ->paginated(false)
             ->emptyStateHeading('No instalments set')
             ->emptyStateDescription('Optional. Set them and the invoice shows the dates; the Today page flags any that fall behind.');

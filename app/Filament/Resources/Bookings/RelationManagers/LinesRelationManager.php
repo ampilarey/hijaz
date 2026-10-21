@@ -10,6 +10,7 @@ use App\Services\Bookings\BookingDesk;
 use App\Support\Currency;
 use App\Support\Money;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -62,35 +63,37 @@ class LinesRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                Action::make('remove')
-                    ->label('Remove')
-                    ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->visible(fn (BookingLine $record): bool => $booking->isLive() && in_array($record->type, [BookingLine::EXTRA, BookingLine::FEE], true))
-                    ->authorize($this->may('update'))
-                    ->requiresConfirmation()
-                    ->action(function (BookingLine $record): void {
-                        $record->delete();
-                        Notification::make()->success()->title('Removed')->send();
-                    }),
-                Action::make('reverse_discount')
-                    ->label('Take back')
-                    ->icon('heroicon-o-arrow-uturn-left')
-                    ->color('warning')
-                    ->visible(fn (BookingLine $record): bool => $booking->isLive() && $record->type === BookingLine::DISCOUNT)
-                    ->authorize($this->may('discount'))
-                    ->requiresConfirmation()
-                    ->action(function (BookingLine $record, BookingDesk $desk): void {
-                        $discount = Discount::query()->where('booking_line_id', $record->getKey())->first();
-
-                        if ($discount instanceof Discount) {
-                            $desk->reverseDiscount($discount);
-                        } else {
+                ActionGroup::make([
+                    Action::make('remove')
+                        ->label('Remove')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->visible(fn (BookingLine $record): bool => $booking->isLive() && in_array($record->type, [BookingLine::EXTRA, BookingLine::FEE], true))
+                        ->authorize($this->may('update'))
+                        ->requiresConfirmation()
+                        ->action(function (BookingLine $record): void {
                             $record->delete();
-                        }
+                            Notification::make()->success()->title('Removed')->send();
+                        }),
+                    Action::make('reverse_discount')
+                        ->label('Take back')
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->color('warning')
+                        ->visible(fn (BookingLine $record): bool => $booking->isLive() && $record->type === BookingLine::DISCOUNT)
+                        ->authorize($this->may('discount'))
+                        ->requiresConfirmation()
+                        ->action(function (BookingLine $record, BookingDesk $desk): void {
+                            $discount = Discount::query()->where('booking_line_id', $record->getKey())->first();
 
-                        Notification::make()->success()->title('Discount reversed')->send();
-                    }),
+                            if ($discount instanceof Discount) {
+                                $desk->reverseDiscount($discount);
+                            } else {
+                                $record->delete();
+                            }
+
+                            Notification::make()->success()->title('Discount reversed')->send();
+                        }),
+                ]),
             ])
             ->paginated(false)
             ->emptyStateHeading('Nothing priced yet')

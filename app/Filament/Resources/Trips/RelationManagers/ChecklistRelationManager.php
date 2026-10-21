@@ -7,6 +7,7 @@ use App\Models\Trip;
 use App\Models\TripChecklistItem;
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -99,26 +100,28 @@ class ChecklistRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                Action::make('done')
-                    ->label('Done')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (TripChecklistItem $record): bool => ! $record->isDone())
-                    ->authorize('tick', TripChecklistItem::class)
-                    ->action(function (TripChecklistItem $record): void {
-                        /** @var User $user */
-                        $user = Filament::auth()->user();
-                        $record->markDone($user);
-                    }),
-                Action::make('not_done')
-                    ->label('Not done')
-                    ->icon('heroicon-o-arrow-uturn-left')
-                    ->color('gray')
-                    ->visible(fn (TripChecklistItem $record): bool => $record->isDone())
-                    ->authorize('tick', TripChecklistItem::class)
-                    ->action(fn (TripChecklistItem $record) => $record->markNotDone()),
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    Action::make('done')
+                        ->label('Done')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (TripChecklistItem $record): bool => ! $record->isDone())
+                        ->authorize('tick', TripChecklistItem::class)
+                        ->action(function (TripChecklistItem $record): void {
+                            /** @var User $user */
+                            $user = Filament::auth()->user();
+                            $record->markDone($user);
+                        }),
+                    Action::make('not_done')
+                        ->label('Not done')
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->color('gray')
+                        ->visible(fn (TripChecklistItem $record): bool => $record->isDone())
+                        ->authorize('tick', TripChecklistItem::class)
+                        ->action(fn (TripChecklistItem $record) => $record->markNotDone()),
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ]),
             ])
             ->emptyStateHeading('Nothing on the list');
     }

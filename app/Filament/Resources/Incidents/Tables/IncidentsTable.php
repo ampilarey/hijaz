@@ -8,6 +8,7 @@ use App\Models\BookingPilgrim;
 use App\Models\Incident;
 use App\Models\Trip;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -15,6 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -29,14 +31,18 @@ class IncidentsTable
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['trip', 'bookingPilgrim.pilgrim', 'recorder', 'resolver']))
             ->columns([
-                TextColumn::make('summary')->searchable()->wrap()
-                    ->description(fn (Incident $record): string => implode(' · ', array_filter([$record->reference, $record->trip->code, $record->categoryLabel(), $record->bookingPilgrim?->pilgrim?->name_en, $record->location, $record->happened_at->format('j M H:i'), $record->recorder?->name]))),
-                TextColumn::make('severity')->badge()->state(fn (Incident $record): string => $record->severityLabel())
-                    ->color(fn (Incident $record): string => match ($record->severity) {
-                        Incident::EMERGENCY => 'danger', Incident::SERIOUS => 'warning', default => 'gray',
-                    }),
-                TextColumn::make('status')->badge()->state(fn (Incident $record): string => $record->isOpen() ? 'Open' : 'Resolved')
-                    ->color(fn (Incident $record): string => $record->isOpen() ? 'danger' : 'success')->visibleFrom('sm'),
+                Split::make([
+                    TextColumn::make('summary')->searchable()->wrap()->weight('medium')
+                        ->description(fn (Incident $record): string => implode(' · ', array_filter([$record->reference, $record->trip->code, $record->categoryLabel(), $record->bookingPilgrim?->pilgrim?->name_en, $record->location, $record->happened_at->format('j M H:i'), $record->recorder?->name]))),
+                    Split::make([
+                        TextColumn::make('severity')->badge()->grow(false)->state(fn (Incident $record): string => $record->severityLabel())
+                            ->color(fn (Incident $record): string => match ($record->severity) {
+                                Incident::EMERGENCY => 'danger', Incident::SERIOUS => 'warning', default => 'gray',
+                            }),
+                        TextColumn::make('status')->badge()->grow(false)->state(fn (Incident $record): string => $record->isOpen() ? 'Open' : 'Resolved')
+                            ->color(fn (Incident $record): string => $record->isOpen() ? 'danger' : 'success'),
+                    ])->grow(false),
+                ])->from('md'),
             ])
             ->defaultSort('happened_at', 'desc')
             ->filters([
@@ -69,27 +75,30 @@ class IncidentsTable
                     }),
             ])
             ->recordActions([
-                Action::make('resolve')
-                    ->label('Resolve')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (Incident $record): bool => $record->isOpen())
-                    ->authorize(fn (): bool => (bool) Filament::auth()->user()?->can('incident.resolve'))
-                    ->schema([Textarea::make('resolution')->label('What was done')->required()->rows(3)])
-                    ->action(function (Incident $record, array $data): void {
-                        $record->resolve($data['resolution']);
-                        Notification::make()->success()->title($record->reference.' resolved')->send();
-                    }),
-                Action::make('detail')->label('Detail')->icon('heroicon-o-eye')->color('gray')
-                    ->modalHeading(fn (Incident $record): string => $record->reference.' · '.$record->summary)
-                    ->modalContent(fn (Incident $record) => new HtmlString('<div class="prose prose-sm max-w-none">'.nl2br(e(implode("\n\n", array_filter([
-                        $record->severityLabel().' · '.$record->categoryLabel().' · '.$record->happened_at->format('j M Y H:i').($record->location ? ' · '.$record->location : ''),
-                        $record->bookingPilgrim ? 'Who: '.$record->bookingPilgrim->pilgrim->name_en : null,
-                        $record->detail,
-                        'Raised by '.($record->recorder?->name ?? 'the leader'),
-                        $record->resolution ? 'Resolved by '.($record->resolver?->name ?? '').' on '.$record->resolved_at?->format('j M H:i').': '.$record->resolution : null,
-                    ])))).'</div>'))
-                    ->modalSubmitAction(false)->modalCancelActionLabel('Close'),
+                ActionGroup::make([
+                    Action::make('resolve')
+                        ->label('Resolve')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (Incident $record): bool => $record->isOpen())
+                        ->authorize(fn (): bool => (bool) Filament::auth()->user()?->can('incident.resolve'))
+                        ->schema([Textarea::make('resolution')->label('What was done')->required()->rows(3)])
+                        ->action(function (Incident $record, array $data): void {
+                            $record->resolve($data['resolution']);
+                            Notification::make()->success()->title($record->reference.' resolved')->send();
+                        }),
+                    Action::make('detail')->label('Detail')->icon('heroicon-o-eye')->color('gray')
+                        ->modalHeading(fn (Incident $record): string => $record->reference.' · '.$record->summary)
+                        ->modalContent(fn (Incident $record) => new HtmlString('<div class="prose prose-sm max-w-none">'.nl2br(e(implode("\n\n", array_filter([
+                            $record->severityLabel().' · '.$record->categoryLabel().' · '.$record->happened_at->format('j M Y H:i').($record->location ? ' · '.$record->location : ''),
+                            $record->bookingPilgrim ? 'Who: '.$record->bookingPilgrim->pilgrim->name_en : null,
+                            $record->detail,
+                            'Raised by '.($record->recorder?->name ?? 'the leader'),
+                            $record->resolution ? 'Resolved by '.($record->resolver?->name ?? '').' on '.$record->resolved_at?->format('j M H:i').': '.$record->resolution : null,
+                        ])))).'</div>'))
+                        ->modalSubmitAction(false)->modalCancelActionLabel('Close'),
+
+                ]),
             ])
             ->emptyStateHeading('No incidents')
             ->emptyStateDescription('Leaders raise them from the ground page; the office logs them here.');

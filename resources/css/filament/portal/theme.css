@@ -80,3 +80,135 @@
         padding-bottom: 0;
     }
 }
+
+/*
+ * Row actions. On a phone the icon is the whole button, so a row keeps its
+ * width for the name and the badge; the word comes back once there is room.
+ * (Every row action therefore carries an icon.)
+ */
+.fi-ta-actions .fi-link:has(.fi-icon) .fi-link-label,
+.fi-ta-actions .fi-btn:has(.fi-icon) .fi-btn-label {
+    display: none;
+}
+
+/* An icon alone is 16px; the box around it is what a thumb hits. */
+.fi-ta-actions .fi-link:has(.fi-icon),
+.fi-ta-actions .fi-btn:has(.fi-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+@media (min-width: 48rem) {
+    .fi-ta-actions .fi-link:has(.fi-icon) .fi-link-label,
+    .fi-ta-actions .fi-btn:has(.fi-icon) .fi-btn-label {
+        display: inline;
+    }
+
+    .fi-ta-actions .fi-link:has(.fi-icon),
+    .fi-ta-actions .fi-btn:has(.fi-icon) {
+        min-width: 0;
+        min-height: 0;
+    }
+}
+
+/* The Today page: each thing to do is one thumb-sized row that opens where it is done. */
+.hz-group-title {
+    margin: 1.25rem 0 0.25rem;
+    font-weight: 600;
+}
+
+.hz-group-title--danger {
+    color: var(--danger-600, #b91c1c);
+}
+
+.hz-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.hz-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 44px;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--gray-100, #f5f5f4);
+    color: inherit;
+    text-decoration: none;
+}
+
+.dark .hz-row {
+    border-top-color: var(--gray-800, #292524);
+}
+
+.hz-row:first-child {
+    border-top: 0;
+}
+
+.hz-row__count {
+    flex: none;
+    min-width: 2.25rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--primary-600, #017a42);
+}
+
+.hz-row__count--quiet,
+.hz-row--danger .hz-row__count--quiet {
+    color: var(--gray-500, #78716c);
+}
+
+.hz-row--danger .hz-row__count {
+    color: var(--danger-600, #b91c1c);
+}
+
+.hz-row__text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.hz-row__title {
+    display: block;
+    font-weight: 500;
+}
+
+.hz-row__hint {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--gray-500, #78716c);
+}
+
+.hz-row__chevron {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--gray-400, #a8a29e);
+}
+
+/* Report tables are wider than a phone: the first column stays put while the rest swipe. */
+.hz-swipe-hint {
+    margin: 0.25rem 0 0.5rem;
+    font-size: 0.75rem;
+    color: var(--gray-500, #78716c);
+}
+
+.hz-report-table th:first-child,
+.hz-report-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--color-white, #fff);
+}
+
+.dark .hz-report-table th:first-child,
+.dark .hz-report-table td:first-child {
+    background: var(--gray-900, #1c1917);
+}
+
+@media (min-width: 48rem) {
+    .hz-swipe-hint {
+        display: none;
+    }
+}

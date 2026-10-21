@@ -26,7 +26,8 @@
             @endif
             @foreach ($report->sections as $section)
                 <h3 style="font-weight:600; margin:1rem 0 .25rem;">{{ $section->title }} <span class="fi-color-gray" style="font-weight:400; font-size:.875rem;">{{ $section->subtitle }}</span></h3>
-                <div style="overflow-x:auto;">
+                @if (count($section->columns) > 3)<p class="hz-swipe-hint">Swipe sideways for the other columns; the first stays put.</p>@endif
+                <div class="hz-report-table" style="overflow-x:auto;">
                     <table class="fi-ta-table" style="width:100%; font-size:.875rem; border-collapse:collapse;">
                         <thead><tr>@foreach ($section->columns as $heading)<th style="text-align:left; padding:.375rem .5rem; border-bottom:1px solid var(--gray-300,#d6d3d1); white-space:nowrap;">{{ $heading }}</th>@endforeach</tr></thead>
                         <tbody>

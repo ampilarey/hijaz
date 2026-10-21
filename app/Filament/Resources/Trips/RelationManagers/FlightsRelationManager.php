@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Trips\RelationManagers;
 
 use App\Models\TripFlight;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -54,7 +55,7 @@ class FlightsRelationManager extends RelationManager
             ])
             ->defaultSort('departs_at')
             ->headerActions([CreateAction::make()->label('Add flight')])
-            ->recordActions([EditAction::make(), DeleteAction::make()])
+            ->recordActions([ActionGroup::make([EditAction::make(), DeleteAction::make()])])
             ->emptyStateHeading('No flights yet');
     }
 }

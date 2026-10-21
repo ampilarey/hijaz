@@ -175,7 +175,7 @@ class PilgrimAdminTest extends TestCase
         $version->extractions()->create(['reader' => 't', 'fields' => ['name_en' => 'X'], 'status' => DocumentExtraction::PROPOSED]);
 
         $this->actingAs($operations)->get(DocumentResource::getUrl())->assertOk()->assertSee('MARIYAM NAZEEHA');
-        $this->actingAs($operations)->get('/portal')->assertOk()->assertSee('1 reading(s) to accept');
+        $this->actingAs($operations)->get('/portal')->assertOk()->assertSee('<span class="hz-row__count">1</span>', false)->assertSee('reading to accept');
 
         config(['telegram.bot_token' => '1:T', 'telegram.bot_username' => 'b']);
         Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => []])]);

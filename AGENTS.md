@@ -41,7 +41,11 @@ domain but never in anything visitors see. Brand rules: docs/BRAND.md.
   and encrypts its identifiers with the `EncryptedIdentifier` cast.
 - **Phone first.** Design at 390 px, widen with `min-width`; at most four
   table columns on a phone (`visibleFrom`); 44 px targets and 16 px inputs
-  on touch screens. `MobileFirstLayoutTest` enforces the CSS side.
+  on touch screens. `MobileFirstLayoutTest` enforces the CSS side. A list
+  that shows a badge or an amount beside the name is a `Split` layout
+  `->from('md')`, so each row is a card on a phone. Below `md` the theme
+  shows row actions as icons only, so every row action has an icon, and two
+  or more row actions go in one `ActionGroup`.
 - **The deploy takes a backup before migrating and stops if it cannot**
   (`hijaz:backup` in `scripts/pull-deploy.sh`). A migration on `main` runs on
   real data, so make it reversible.

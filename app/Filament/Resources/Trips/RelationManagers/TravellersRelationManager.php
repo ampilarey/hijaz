@@ -18,6 +18,7 @@ use App\Services\Operations\Buses;
 use App\Services\Operations\Rooming;
 use App\Support\Money;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
@@ -105,11 +106,14 @@ class TravellersRelationManager extends RelationManager
                     ->query(fn (Builder $query, array $data) => filled($data['value'] ?? null) ? $query->where('bookings.status', $data['value']) : $query),
             ])
             ->recordActions([
-                EditAction::make()->label('Visa / ticket')->authorize($this->may('visa.update')),
-                Action::make('open')->label('Pilgrim')->icon('heroicon-o-user')->color('gray')
-                    ->url(fn (BookingPilgrim $record): string => PilgrimResource::getUrl('edit', ['record' => $record->pilgrim_id])),
-                Action::make('booking')->label('Booking')->icon('heroicon-o-ticket')->color('gray')
-                    ->url(fn (BookingPilgrim $record): string => BookingResource::getUrl('view', ['record' => $record->booking_id])),
+                ActionGroup::make([
+                    EditAction::make()->label('Visa / ticket')->authorize($this->may('visa.update')),
+                    Action::make('open')->label('Pilgrim')->icon('heroicon-o-user')->color('gray')
+                        ->url(fn (BookingPilgrim $record): string => PilgrimResource::getUrl('edit', ['record' => $record->pilgrim_id])),
+                    Action::make('booking')->label('Booking')->icon('heroicon-o-ticket')->color('gray')
+                        ->url(fn (BookingPilgrim $record): string => BookingResource::getUrl('view', ['record' => $record->booking_id])),
+
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

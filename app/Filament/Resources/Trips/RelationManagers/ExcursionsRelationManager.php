@@ -6,6 +6,7 @@ use App\Filament\Forms\MoneyInput;
 use App\Models\TripExcursion;
 use App\Models\TripStop;
 use App\Support\Currency;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -57,7 +58,7 @@ class ExcursionsRelationManager extends RelationManager
             ])
             ->defaultSort('sort_order')
             ->headerActions([CreateAction::make()->label('Add trip')->mutateDataUsing(fn (array $data): array => self::normalise($data))])
-            ->recordActions([EditAction::make()->mutateDataUsing(fn (array $data): array => self::normalise($data)), DeleteAction::make()])
+            ->recordActions([ActionGroup::make([EditAction::make()->mutateDataUsing(fn (array $data): array => self::normalise($data)), DeleteAction::make()])])
             ->emptyStateHeading('No additional trips yet')
             ->emptyStateDescription('Makkah Ziyarah, Taif, Jeddah: free with the package or priced in riyal.');
     }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Trips\RelationManagers;
 use App\Filament\Forms\MoneyInput;
 use App\Models\PriceTier;
 use App\Support\Currency;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -40,7 +41,7 @@ class PriceTiersRelationManager extends RelationManager
             ])
             ->defaultSort('sort_order')
             ->headerActions([CreateAction::make()->label('Add price')])
-            ->recordActions([EditAction::make(), DeleteAction::make()])
+            ->recordActions([ActionGroup::make([EditAction::make(), DeleteAction::make()])])
             ->emptyStateHeading('No prices yet')
             ->emptyStateDescription('A price per occupancy and passenger type. Nobody can be booked until there is one.');
     }

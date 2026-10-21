@@ -9,6 +9,7 @@ use App\Models\ExcursionBooking;
 use App\Models\TripExcursion;
 use App\Services\Bookings\Excursions;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
@@ -73,17 +74,19 @@ class ExcursionBookingsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                PaymentActions::record(fn (?ExcursionBooking $record) => $record, 'Pay')->visible(fn (ExcursionBooking $record): bool => $record->status === ExcursionBooking::OPEN && $record->total_minor > 0),
-                Action::make('invoice')->label('Invoice')->icon('heroicon-o-document-text')->color('gray')
-                    ->url(fn (ExcursionBooking $record): string => route('excursion-bookings.invoice', $record), shouldOpenInNewTab: true),
-                Action::make('cancel')->label('Cancel')->icon('heroicon-o-x-circle')->color('danger')
-                    ->visible(fn (ExcursionBooking $record): bool => $record->status !== ExcursionBooking::CANCELLED)
-                    ->authorize(fn (): bool => (bool) Filament::auth()->user()?->can('excursionBooking.update'))
-                    ->requiresConfirmation()
-                    ->action(function (ExcursionBooking $record, Excursions $excursions): void {
-                        $excursions->cancel($record);
-                        Notification::make()->warning()->title('Cancelled')->send();
-                    }),
+                ActionGroup::make([
+                    PaymentActions::record(fn (?ExcursionBooking $record) => $record, 'Pay')->visible(fn (ExcursionBooking $record): bool => $record->status === ExcursionBooking::OPEN && $record->total_minor > 0),
+                    Action::make('invoice')->label('Invoice')->icon('heroicon-o-document-text')->color('gray')
+                        ->url(fn (ExcursionBooking $record): string => route('excursion-bookings.invoice', $record), shouldOpenInNewTab: true),
+                    Action::make('cancel')->label('Cancel')->icon('heroicon-o-x-circle')->color('danger')
+                        ->visible(fn (ExcursionBooking $record): bool => $record->status !== ExcursionBooking::CANCELLED)
+                        ->authorize(fn (): bool => (bool) Filament::auth()->user()?->can('excursionBooking.update'))
+                        ->requiresConfirmation()
+                        ->action(function (ExcursionBooking $record, Excursions $excursions): void {
+                            $excursions->cancel($record);
+                            Notification::make()->warning()->title('Cancelled')->send();
+                        }),
+                ]),
             ])
             ->paginated(false)
             ->emptyStateHeading('No additional trips booked')

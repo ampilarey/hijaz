@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Bookings\Tables;
 use App\Filament\Support\TripOptions;
 use App\Models\Booking;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -17,16 +18,21 @@ class BookingsTable
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['customer', 'trip']))
             ->columns([
-                TextColumn::make('reference')->label('Booking')->searchable()
-                    ->description(fn (Booking $record): string => $record->customer->name.' · '.$record->seats.' seat'.($record->seats === 1 ? '' : 's')),
-                TextColumn::make('trip.code')->label('Trip')->sortable()->visibleFrom('sm'),
-                TextColumn::make('status')->badge()->state(fn (Booking $record): string => $record->statusLabel())
-                    ->color(fn (Booking $record): string => match ($record->status) {
-                        Booking::CONFIRMED => 'success', Booking::CANCELLED => 'danger', Booking::COMPLETED => 'gray', default => 'warning',
-                    }),
-                TextColumn::make('balance')->label('Balance')->state(fn (Booking $record): string => $record->balanceSummary())
-                    ->color(fn (Booking $record): string => $record->isPaidUp() ? 'success' : 'danger'),
-                TextColumn::make('created_at')->label('Made')->since()->visibleFrom('md'),
+                Split::make([
+                    TextColumn::make('reference')->label('Booking')->searchable()->weight('medium')
+                        ->description(fn (Booking $record): string => $record->customer->name.' · '.$record->seats.' seat'.($record->seats === 1 ? '' : 's')),
+                    TextColumn::make('trip.code')->label('Trip')->grow(false)->visibleFrom('sm'),
+                    // Status and balance share a line even on a phone.
+                    Split::make([
+                        TextColumn::make('status')->badge()->grow(false)->state(fn (Booking $record): string => $record->statusLabel())
+                            ->color(fn (Booking $record): string => match ($record->status) {
+                                Booking::CONFIRMED => 'success', Booking::CANCELLED => 'danger', Booking::COMPLETED => 'gray', default => 'warning',
+                            }),
+                        TextColumn::make('balance')->label('Balance')->alignEnd()->weight('medium')->state(fn (Booking $record): string => $record->balanceSummary())
+                            ->color(fn (Booking $record): string => $record->isPaidUp() ? 'success' : 'danger'),
+                    ])->grow(false),
+                    TextColumn::make('created_at')->label('Made')->since()->grow(false)->visibleFrom('md'),
+                ])->from('md'),
             ])
             ->defaultSort('id', 'desc')
             ->searchable()

@@ -10,6 +10,7 @@ use App\Services\Finance\Books;
 use App\Support\Currency;
 use App\Support\Money;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -26,7 +27,14 @@ final class BookActions
     /** @return list<Action> */
     public static function all(): array
     {
-        return [self::entry(), self::transfer(), self::purchase(), self::tt()];
+        return [
+            self::entry(),
+            ActionGroup::make([self::transfer(), self::purchase(), self::tt()])
+                ->label('Transfers and purchases')
+                ->icon('heroicon-o-arrows-right-left')
+                ->color('gray')
+                ->button(),
+        ];
     }
 
     public static function entry(): Action

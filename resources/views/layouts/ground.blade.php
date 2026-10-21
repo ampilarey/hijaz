@@ -19,7 +19,7 @@
                 <p class="truncate font-semibold text-brand-green-dark">{{ $heading ?? config('hijaz.name') }}</p>
                 @isset($subheading)<p class="truncate text-sm text-brand-muted">{{ $subheading }}</p>@endisset
             </div>
-            @isset($back)<a href="{{ $back }}" class="rounded-lg border border-brand-sky px-3 py-2 text-sm font-medium">Back</a>@endisset
+            @isset($back)<a href="{{ $back }}" class="inline-flex min-h-11 items-center rounded-lg border border-brand-sky px-4 text-sm font-medium">Back</a>@endisset
         </div>
     </header>
     <main class="mx-auto max-w-2xl px-4 py-4 pb-24">

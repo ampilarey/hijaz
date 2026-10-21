@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AuditLogs\Tables;
 
 use App\Models\AuditLog;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -14,24 +15,30 @@ class AuditLogsTable
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')
-                    ->label('When')
-                    ->dateTime('j M, H:i')
-                    ->sortable()
-                    ->description(fn (AuditLog $record): string => $record->actor),
-                TextColumn::make('event')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        AuditLog::DELETED => 'danger',
-                        AuditLog::CREATED => 'success',
-                        AuditLog::DOWNLOADED => 'warning',
-                        default => 'gray',
-                    }),
-                TextColumn::make('subject')
-                    ->label('What')
-                    ->description(fn (AuditLog $record): string => $record->record_label),
-                TextColumn::make('channel')->badge()->visibleFrom('md'),
-                TextColumn::make('user_email')->label('Email')->visibleFrom('lg'),
+                Split::make([
+                    TextColumn::make('created_at')
+                        ->label('When')
+                        ->dateTime('j M, H:i')
+                        ->sortable()
+                        ->grow(false)
+                        ->description(fn (AuditLog $record): string => $record->actor),
+                    Split::make([
+                        TextColumn::make('event')
+                            ->badge()
+                            ->grow(false)
+                            ->color(fn (string $state): string => match ($state) {
+                                AuditLog::DELETED => 'danger',
+                                AuditLog::CREATED => 'success',
+                                AuditLog::DOWNLOADED => 'warning',
+                                default => 'gray',
+                            }),
+                        TextColumn::make('subject')
+                            ->label('What')
+                            ->description(fn (AuditLog $record): string => $record->record_label),
+                    ]),
+                    TextColumn::make('channel')->badge()->grow(false)->visibleFrom('md'),
+                    TextColumn::make('user_email')->label('Email')->grow(false)->visibleFrom('lg'),
+                ])->from('md'),
             ])
             ->defaultSort('id', 'desc')
             ->filters([

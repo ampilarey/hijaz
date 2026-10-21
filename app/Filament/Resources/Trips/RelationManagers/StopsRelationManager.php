@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Trips\RelationManagers;
 
 use App\Models\TripHotel;
 use App\Models\TripStop;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -50,7 +51,7 @@ class StopsRelationManager extends RelationManager
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
             ->headerActions([CreateAction::make()->label('Add stop')])
-            ->recordActions([EditAction::make(), DeleteAction::make()])
+            ->recordActions([ActionGroup::make([EditAction::make(), DeleteAction::make()])])
             ->emptyStateHeading('No route yet')
             ->emptyStateDescription('Add the stops in order, or use "Build route" in the menu above once flights and hotels are in.');
     }

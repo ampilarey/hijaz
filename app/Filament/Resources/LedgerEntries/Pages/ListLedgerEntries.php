@@ -18,8 +18,11 @@ class ListLedgerEntries extends ListRecords
     {
         $books = app(Books::class);
 
+        // Only accounts holding something: a phone screen has no room for a row of zeros.
         return Account::query()->where('is_active', true)->orderBy('sort_order')->get()
-            ->map(fn (Account $a): string => $a->name.' '.$books->balance($a)->format())
+            ->map(fn (Account $a): array => [$a, $books->balance($a)])
+            ->filter(fn (array $pair): bool => $pair[1]->minor !== 0)
+            ->map(fn (array $pair): string => $pair[0]->name.': '.$pair[1]->format())
             ->implode(' · ') ?: null;
     }
 
