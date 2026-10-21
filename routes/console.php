@@ -35,3 +35,8 @@ Schedule::command('telegram:daily')
 Schedule::command('bookings:expire-holds')
     ->hourly()
     ->withoutOverlapping(10);
+
+// Verified money the books missed, caught up nightly.
+Schedule::command('ledger:post-payments')
+    ->dailyAt('03:10')
+    ->withoutOverlapping(10);

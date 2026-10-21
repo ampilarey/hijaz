@@ -243,6 +243,45 @@ better; that is the owner's call because the image leaves the server.
   page shows bus, rooms, balance, visa and copies, and *Check in* marks the
   person on their bus.
 
+## The books and the reports
+
+- **Books** (Money → Books) is the single record of money: every rufiyaa,
+  dollar and riyal in or out of an account (Money → Accounts: Bank MVR, Bank
+  USD, the cash boxes, each group leader's riyal float). A verified pilgrim
+  payment posts itself as income against its trip the moment Finance
+  verifies it; a refund posts out. Finance records the rest with the four
+  buttons: *Record income or expense* (category, trip or overhead,
+  counterparty, reference, the receipt), *Transfer between accounts* (same
+  currency: cash to the bank, a leader handing riyal back), *Buy currency*
+  (MVR out, USD in, the bank's charges; the realised rate is kept on both
+  entries and compared with the table rate), *Send a TT* (beneficiary, their
+  bank, reference, charges, the advice scan). Nothing is edited: a wrong
+  entry is *voided* with a reason and stays in the list.
+- **MVR figures.** Every entry in another currency carries an MVR amount at
+  the exchange rate in force on its date (Money → Exchange rates). When no
+  rate is set for that date the entry has none, and every report says so
+  instead of adding it in as nothing. Set the rate, and new entries use it;
+  old entries keep the rate they were recorded under.
+- **Reports** (Money → Reports, and *Reports* on a trip): pick the report
+  and its filters; it shows on the page and prints as PDF or CSV. Trip
+  profit and loss (income and expenses by category per currency, MVR
+  totals, margin per traveller, what pilgrims still owe, the costs
+  estimated on the trip); trip summary (seats, bookings, money, copies,
+  visas, buses, rooms, readiness); yearly income and expenses (by month, by
+  category, by trip with overheads, CSV for the accountant); cash book per
+  account with a running balance; currency purchases with the exchange cost
+  against the table rate; outstanding balances with ageing; payment
+  collections by day and method; discounts with reasons and approvers;
+  documents status and expiring passports; additional trips' participation
+  and income; pilgrim demographics (gender, age bands, islands);
+  verification audit (who verified which copy and payment).
+- **Bank USD list.** On the trip's Travellers tab select the pilgrims and
+  *Put on the bank USD list* with the amount each; Money → Reports → Bank
+  USD list prints it with a cover letter on the letterhead, one row per ID
+  number. Adjust the columns when the bank changes its form.
+- Book categories are under Reference; new ones can be added, old ones
+  deactivated, never deleted.
+
 ## Settings in `.env`
 
 | Key | Meaning |

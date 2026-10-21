@@ -42,12 +42,12 @@ class ReferenceDataTest extends TestCase
     public function test_the_default_accounts_are_seeded_once(): void
     {
         $this->seed(DatabaseSeeder::class);
-        $this->assertSame(4, Account::count());
+        $this->assertSame(5, Account::count());
 
         Account::first()->update(['name' => 'Renamed']);
         $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame(4, Account::count());
+        $this->assertSame(5, Account::count());
         $this->assertSame('Renamed', Account::first()->name);
     }
 

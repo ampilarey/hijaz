@@ -155,6 +155,17 @@ final class Access
         'readiness.view',
         'pilgrim.checkIn',
         'visa.update',
+
+        'ledger.viewAny',
+        'ledger.view',
+        'ledger.create',
+        'ledger.void',
+        'ledgerCategory.viewAny',
+        'ledgerCategory.view',
+        'ledgerCategory.create',
+        'ledgerCategory.update',
+        'report.view',
+        'usdList.update',
     ];
 
     /**
@@ -169,6 +180,7 @@ final class Access
         $people = ['customer.viewAny', 'customer.view', 'pilgrim.viewAny', 'pilgrim.view', 'document.viewAny', 'document.view'];
         $registration = ['customer.create', 'customer.update', 'pilgrim.create', 'pilgrim.update', 'document.create', 'document.accept', 'document.download'];
         $money = ['booking.viewAny', 'booking.view', 'payment.viewAny', 'payment.view', 'excursionBooking.viewAny', 'excursionBooking.view'];
+        $books = ['ledger.viewAny', 'ledger.view', 'ledgerCategory.viewAny', 'ledgerCategory.view', 'report.view'];
         $ground = ['bus.viewAny', 'bus.view', 'room.viewAny', 'room.view', 'card.viewAny', 'card.view', 'list.view', 'readiness.view'];
         $operations = ['bus.create', 'bus.update', 'bus.delete', 'bus.assign', 'room.create', 'room.update', 'room.delete', 'room.assign', 'card.create', 'card.scan', 'pilgrim.checkIn', 'visa.update'];
         $desk = ['booking.create', 'booking.update', 'booking.confirm', 'booking.cancel', 'payment.create', 'payment.download', 'excursionBooking.create', 'excursionBooking.update'];
@@ -197,6 +209,8 @@ final class Access
                 ...$desk,
                 ...$ground,
                 ...$operations,
+                'report.view',
+                'usdList.update',
             ],
 
             self::FINANCE => [
@@ -218,6 +232,12 @@ final class Access
                 'payment.refund',
                 'payment.download',
                 ...$ground,
+                ...$books,
+                'ledger.create',
+                'ledger.void',
+                'ledgerCategory.create',
+                'ledgerCategory.update',
+                'usdList.update',
             ],
 
             self::REGISTRATION => [
@@ -257,6 +277,7 @@ final class Access
                 ...$people,
                 ...$money,
                 ...$ground,
+                ...$books,
             ],
         ];
     }

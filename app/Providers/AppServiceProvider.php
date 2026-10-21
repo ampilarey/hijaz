@@ -15,6 +15,8 @@ use App\Models\ExchangeRate;
 use App\Models\ExcursionBooking;
 use App\Models\ExcursionParticipant;
 use App\Models\Island;
+use App\Models\LedgerCategory;
+use App\Models\LedgerEntry;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\PaymentSchedule;
@@ -29,6 +31,7 @@ use App\Models\TripCost;
 use App\Models\TripExcursion;
 use App\Models\TripFlight;
 use App\Models\TripHotel;
+use App\Models\UsdAllocation;
 use App\Models\User;
 use App\Observers\AuditObserver;
 use App\Support\Access;
@@ -98,5 +101,8 @@ class AppServiceProvider extends ServiceProvider
         Room::class,
         RoomAssignment::class,
         Card::class,
+        LedgerCategory::class,
+        LedgerEntry::class,
+        UsdAllocation::class,
     ];
 }

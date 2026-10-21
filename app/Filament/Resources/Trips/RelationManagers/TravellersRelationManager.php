@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Trips\RelationManagers;
 
+use App\Filament\Forms\MoneyInput;
 use App\Filament\Resources\Bookings\BookingResource;
 use App\Filament\Resources\Pilgrims\PilgrimResource;
 use App\Models\Booking;
@@ -15,12 +16,14 @@ use App\Models\TripHotel;
 use App\Services\Bookings\Excursions;
 use App\Services\Operations\Buses;
 use App\Services\Operations\Rooming;
+use App\Support\Money;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -187,6 +190,33 @@ class TravellersRelationManager extends RelationManager
                             }
 
                             Notification::make()->{$errors === [] ? 'success' : 'warning'}()->title($n.' added to '.$excursion->title)->body(implode(' ', $errors) ?: null)->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('usd_list')
+                        ->label('Put on the bank USD list')
+                        ->icon('heroicon-o-banknotes')
+                        ->authorize($this->may('usdList.update'))
+                        ->schema([
+                            MoneyInput::make('amount_minor', 'currency', 'USD each')->default(50000),
+                            Hidden::make('currency')->default('USD'),
+                            TextInput::make('note')->maxLength(160),
+                        ])
+                        ->action(function (Collection $records, array $data) use ($trip): void {
+                            foreach ($records as $bp) {
+                                $trip->usdAllocations()->updateOrCreate(['booking_pilgrim_id' => $bp->getKey()], ['amount_minor' => (int) $data['amount_minor'], 'note' => $data['note'] ?? null]);
+                            }
+
+                            Notification::make()->success()->title($records->count().' on the USD list at '.Money::ofMinor((int) $data['amount_minor'], 'USD')->format().' each')->body('Print it under Money → Reports → Bank USD list.')->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('usd_list_off')
+                        ->label('Take off the USD list')
+                        ->icon('heroicon-o-minus-circle')
+                        ->color('gray')
+                        ->authorize($this->may('usdList.update'))
+                        ->action(function (Collection $records) use ($trip): void {
+                            $n = $trip->usdAllocations()->whereIn('booking_pilgrim_id', $records->pluck('id'))->delete();
+                            Notification::make()->success()->title($n.' taken off the USD list')->send();
                         })
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('cards')

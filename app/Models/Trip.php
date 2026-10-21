@@ -175,6 +175,18 @@ class Trip extends Model
         return $this->hasMany(Booking::class);
     }
 
+    /** @return HasMany<LedgerEntry, $this> */
+    public function ledgerEntries(): HasMany
+    {
+        return $this->hasMany(LedgerEntry::class);
+    }
+
+    /** @return HasMany<UsdAllocation, $this> */
+    public function usdAllocations(): HasMany
+    {
+        return $this->hasMany(UsdAllocation::class);
+    }
+
     /** @return HasMany<BusGroup, $this> */
     public function busGroups(): HasMany
     {

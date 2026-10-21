@@ -50,6 +50,9 @@ class Document extends Model
 
     public const BANK_SLIP = 'bank_slip';
 
+    /** A receipt, a TT advice, an exchange slip: what a ledger entry rests on. */
+    public const EVIDENCE = 'evidence';
+
     public const OTHER = 'other';
 
     /** @var array<string, string> */
@@ -59,6 +62,7 @@ class Document extends Model
         self::PHOTO => 'Passport photo',
         self::VISA => 'Visa',
         self::VACCINATION => 'Vaccination certificate',
+        self::EVIDENCE => 'Evidence (receipt, advice, slip)',
         self::OTHER => 'Other',
     ];
 

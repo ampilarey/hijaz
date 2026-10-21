@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             IslandsSeeder::class,
             AccountsSeeder::class,
+            LedgerCategoriesSeeder::class,
         ]);
     }
 }

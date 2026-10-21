@@ -857,7 +857,7 @@ relative: S is a day or two of focused work, M a few days, L a week or more.
 | 3 ✓ | Bookings and money | Staff-created bookings for individuals and families, MVR lines and USD room upgrades, discounts, slip upload and reading, Finance verification, per-currency balances and allocations, invoices and receipts, SAR excursion bookings and invoices, instalments, cancellations and refunds | L |
 | 4 ✓ | Operations | Bus groups, rooms, checkers, readiness board, manifests, bus and room lists, luggage tags and customer cards with QR, the Scan tab, visa tracker, ticket numbers, bulk actions on every pilgrim list | L |
 | 5 ✓ | Telegram, full | Alerts for every queue, queries, confirmed actions, slip upload by chat, PDFs by chat | M |
-| 6 | Finance and reports | Accounts and ledger, currency purchases, TTs, leader SAR floats and handovers, trip P&L, yearly report, cash book, outstanding balances, USD bank list, the report framework and the first report set, CSV | L |
+| 6 ✓ | Finance and reports | Accounts and ledger, currency purchases, TTs, leader SAR floats and handovers, trip P&L, yearly report, cash book, outstanding balances, USD bank list, the report framework and the first report set, CSV | L |
 | 7 | On the ground | Offline leader page, roll calls, incidents, pilgrim self-service link | M |
 
 Phase 0 and 1 together give the owner a trip they can look at within the

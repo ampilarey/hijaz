@@ -7,6 +7,7 @@ use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -58,6 +59,18 @@ class Account extends Model
     public function holder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'holder_user_id');
+    }
+
+    /** @return HasMany<LedgerEntry, $this> */
+    public function entries(): HasMany
+    {
+        return $this->hasMany(LedgerEntry::class);
+    }
+
+    /** The default account for money of a kind and currency: the first active one. */
+    public static function defaultFor(string $kind, string $currency): ?self
+    {
+        return static::query()->where('is_active', true)->where('kind', $kind)->where('currency', $currency)->orderBy('sort_order')->first();
     }
 
     public function kindLabel(): string

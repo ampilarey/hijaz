@@ -3,6 +3,7 @@
 namespace App\Services\Payments;
 
 use App\Events\PaymentRecorded;
+use App\Events\PaymentSettled;
 use App\Models\Booking;
 use App\Models\ExchangeRate;
 use App\Models\ExcursionBooking;
@@ -71,6 +72,8 @@ final class Ledger
             $payment->transitionTo(Payment::SUCCEEDED, $note, $actor);
             $this->allocate($payment, $payable, $allocations);
             $this->recompute($payable);
+
+            DB::afterCommit(fn () => PaymentSettled::dispatch($payment));
 
             return $payment->refresh();
         });
@@ -147,6 +150,8 @@ final class Ledger
             }
 
             $this->recompute($payable);
+
+            DB::afterCommit(fn () => PaymentSettled::dispatch($refund));
 
             return $refund->refresh();
         });

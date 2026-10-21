@@ -3,6 +3,7 @@
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OperationsController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -32,3 +33,6 @@ Route::middleware(['web', 'auth'])->prefix('lists')->name('lists.')->group(funct
     Route::get('/excursions/{tripExcursion}', [OperationsController::class, 'excursion'])->name('excursion');
     Route::get('/cards/{kind}', [OperationsController::class, 'cards'])->name('cards');
 });
+
+// Reports: one route, the report named in the query, PDF or CSV, audited.
+Route::middleware(['web', 'auth'])->get('/reports', [ReportController::class, 'show'])->name('reports.show');

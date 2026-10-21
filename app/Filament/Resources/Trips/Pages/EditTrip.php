@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Trips\Pages;
 
 use App\Exceptions\IllegalTripTransition;
+use App\Filament\Pages\ReportsPage;
 use App\Filament\Resources\Trips\TripResource;
 use App\Models\Trip;
 use App\Services\Operations\Readiness;
@@ -85,6 +86,9 @@ class EditTrip extends EditRecord
             Action::make('lists')->label('Lists')->icon('heroicon-o-document-text')->color('gray')
                 ->visible(fn (): bool => (bool) auth()->user()?->can('list.view'))
                 ->url(TripResource::getUrl('lists', ['record' => $trip])),
+            Action::make('reports')->label('Reports')->icon('heroicon-o-chart-bar')->color('gray')
+                ->visible(fn (): bool => (bool) auth()->user()?->can('report.view'))
+                ->url(ReportsPage::getUrl(['report' => 'trip_summary', 'trip' => $trip->getKey()])),
             ...$transitions,
             ActionGroup::make([
                 Action::make('copy')
