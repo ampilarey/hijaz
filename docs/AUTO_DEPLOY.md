@@ -17,7 +17,11 @@ Workflow **Deploy hijaz.rihla.mv** (`.github/workflows/deploy.yml`) runs when th
    `migrate --force` → `config:cache` → `route:cache` → `view:clear`.
 4. The workflow polls `GET /api/health` with the secret until the site reports
    that commit, then fetches the homepage. Seven minutes without a match fails
-   the run.
+   the run. The pull script writes each step's outcome to
+   `storage/app/deploy-status.json`, which the health endpoint returns as
+   `deploy`; a step that failed (`"ok":false,"step":"migrate"`) fails the
+   run too, so code that landed ahead of its migration is never reported as
+   a good deploy.
 
 Typical delay after a merge: CI (about two minutes) plus under a minute.
 
@@ -64,6 +68,7 @@ deploys a red commit either.
 | `401` | Secret on GitHub (environment `hijaz`) differs from the server `.env`. |
 | `503 Unable to spawn` | `proc_open` disabled for PHP on the host. The cron fallback still deploys within a minute; the workflow's verify step will then pass on a re-run. |
 | Verify step times out | `tail -50 ~/hijaz/storage/logs/deploy.log` on the server. Usual causes: fast-forward refused (someone committed on the server), `composer install` failure, a migration error. |
+| Verify step says a deploy step failed | The code is live but that step (usually `migrate`) did not finish, so the database is behind the code. `tail -50 ~/hijaz/storage/logs/deploy.log` names the error; fix it and push, and the next deploy picks up where the migration stopped. |
 | Site is 500 after a deploy | `tail -50 /home/rihla/hijaz/storage/logs/laravel-$(date +%F).log` |
 
 Deploy by hand, if ever needed:

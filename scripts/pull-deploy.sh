@@ -76,12 +76,25 @@ php artisan storage:link --force >/dev/null 2>&1 || log "WARN: storage:link fail
 # the copy cannot be made the deploy stops here, and the log says why.
 php artisan hijaz:backup --keep=10 || { log "backup failed — not migrating"; exit 1; }
 
-php artisan migrate --force \
-  && php artisan db:seed --force \
-  && php artisan config:cache \
-  && php artisan route:cache \
-  && php artisan view:clear \
-  || { log "Laravel deploy steps failed"; exit 1; }
+# What happened is written where /api/health can report it (with the deploy
+# secret), so a deploy whose code landed but whose migration failed is never
+# mistaken for a good one by the workflow or by a person reading the health.
+STATUS="$ROOT/storage/app/deploy-status.json"
+record_status() {
+  printf '{"ok":%s,"commit":"%s","step":"%s","at":"%s"}\n' "$1" "${REMOTE:0:40}" "$2" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > "$STATUS" 2>/dev/null || true
+}
+
+run_step() {
+  local name="$1"; shift
+  "$@" || { log "deploy step failed: $name"; record_status false "$name"; exit 1; }
+}
+
+run_step migrate php artisan migrate --force
+run_step seed php artisan db:seed --force
+run_step config-cache php artisan config:cache
+run_step route-cache php artisan route:cache
+run_step view-clear php artisan view:clear
+record_status true done
 
 # Harmless until TELEGRAM_BOT_TOKEN is set in .env.
 php artisan telegram:webhook || log "WARN: telegram webhook not set"

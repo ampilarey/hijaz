@@ -27,8 +27,28 @@ class HealthController extends Controller
 
         if (DeploySecret::matches($request)) {
             $payload['commit'] = DeployedCommit::sha();
+            $payload['deploy'] = self::lastDeploy();
         }
 
         return response()->json($payload);
+    }
+
+    /**
+     * What the last deploy script run wrote: ok, or the step that failed.
+     * Null when no deploy has run on this host since the file was added.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function lastDeploy(): ?array
+    {
+        $path = storage_path('app/deploy-status.json');
+
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $status = json_decode((string) file_get_contents($path), true);
+
+        return is_array($status) ? $status : null;
     }
 }

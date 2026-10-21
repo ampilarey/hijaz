@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $event
  * @property string $channel
  * @property string $auditable_type
- * @property int $auditable_id
+ * @property string $auditable_id The record's key: a number, or a setting's name.
  * @property array<string, mixed>|null $old_values
  * @property array<string, mixed>|null $new_values
  */
@@ -68,6 +68,14 @@ class AuditLog extends Model
     public function getSubjectAttribute(): string
     {
         return class_basename($this->auditable_type);
+    }
+
+    /** "#12" for a numbered record, the key itself for a setting. */
+    public function getRecordLabelAttribute(): string
+    {
+        $key = (string) $this->auditable_id;
+
+        return ctype_digit($key) ? '#'.$key : $key;
     }
 
     /** Who did it, as recorded at the time; null means the system. */

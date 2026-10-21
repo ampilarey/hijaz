@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -15,6 +16,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $this->clearAFailedFirstRun();
+
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
             $table->string('reference', 20)->unique(); // HJZ-B-2027-0001
@@ -140,7 +143,8 @@ return new class extends Migration
             $table->unsignedBigInteger('amount_minor');
             $table->timestamps();
 
-            $table->unique(['excursion_booking_id', 'booking_pilgrim_id']);
+            // Named by hand: the generated name is over MySQL's 64-character limit.
+            $table->unique(['excursion_booking_id', 'booking_pilgrim_id'], 'excursion_participants_booking_pilgrim_unique');
         });
 
         Schema::create('payments', function (Blueprint $table) {
@@ -195,6 +199,33 @@ return new class extends Migration
 
             $table->index(['payment_id', 'currency']);
         });
+    }
+
+    /**
+     * The first version of this migration failed on MySQL at the index above,
+     * after creating most of its tables and before being recorded as run, so
+     * MySQL (whose DDL does not roll back) was left with half of them. They
+     * could never have held anything (no payments table, no bookings page),
+     * so they are dropped and made again; if a booking somehow exists, stop
+     * and let a person look.
+     */
+    private function clearAFailedFirstRun(): void
+    {
+        if (Schema::hasTable('payment_allocations') || ! Schema::hasTable('bookings')) {
+            return;
+        }
+
+        if (DB::table('bookings')->exists()) {
+            throw new RuntimeException('bookings has rows but the bookings migration never finished; check the tables by hand before migrating.');
+        }
+
+        Schema::disableForeignKeyConstraints();
+
+        foreach (['payment_transactions', 'payments', 'excursion_participants', 'excursion_bookings', 'payment_schedules', 'discounts', 'booking_lines', 'booking_pilgrims', 'seat_holds', 'booking_status_transitions', 'bookings'] as $table) {
+            Schema::dropIfExists($table);
+        }
+
+        Schema::enableForeignKeyConstraints();
     }
 
     public function down(): void

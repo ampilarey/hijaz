@@ -29,7 +29,7 @@ class AuditLogsTable
                     }),
                 TextColumn::make('subject')
                     ->label('What')
-                    ->description(fn (AuditLog $record): string => '#'.$record->auditable_id),
+                    ->description(fn (AuditLog $record): string => $record->record_label),
                 TextColumn::make('channel')->badge()->visibleFrom('md'),
                 TextColumn::make('user_email')->label('Email')->visibleFrom('lg'),
             ])

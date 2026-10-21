@@ -19,7 +19,7 @@ class AuditLogInfolist
                 TextEntry::make('event')->badge(),
                 TextEntry::make('channel')->badge(),
                 TextEntry::make('subject')->label('What'),
-                TextEntry::make('auditable_id')->label('Record'),
+                TextEntry::make('record_label')->label('Record'),
                 TextEntry::make('ip_address')->label('From')->placeholder('—'),
                 TextEntry::make('url')->placeholder('—')->columnSpanFull(),
             ]),

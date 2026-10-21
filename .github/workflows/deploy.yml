@@ -90,7 +90,24 @@ jobs:
             echo "Attempt ${attempt}: live=${live:-unknown} want=${DEPLOY_SHA}"
 
             if [ "$live" = "${DEPLOY_SHA}" ]; then
-              echo "${SITE_URL} is serving ${DEPLOY_SHA}"
+              # The code is live; the deploy script says whether the rest
+              # (migrate, seed, caches) finished. A failed step keeps the
+              # database behind the code, which is the one state to shout about.
+              ok=$(printf '%s' "$body" | jq -r '.deploy.ok // empty')
+              step=$(printf '%s' "$body" | jq -r '.deploy.step // empty')
+              deploy_commit=$(printf '%s' "$body" | jq -r '.deploy.commit // empty')
+
+              if [ "$ok" = "false" ] && [ "$deploy_commit" = "${DEPLOY_SHA}" ]; then
+                echo "::error::${SITE_URL} is serving ${DEPLOY_SHA} but the deploy step '${step}' failed. Read storage/logs/deploy.log on the server, fix, and push again."
+                exit 1
+              fi
+
+              if [ "$deploy_commit" != "${DEPLOY_SHA}" ] && [ "$attempt" -lt 30 ]; then
+                echo "Code is live; waiting for the deploy script to finish its steps…"
+                continue
+              fi
+
+              echo "${SITE_URL} is serving ${DEPLOY_SHA} (deploy ${ok:-status unknown})"
               curl -fsS -o /dev/null -w "home %{http_code}\n" "${SITE_URL}/"
               exit 0
             fi
