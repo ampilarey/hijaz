@@ -6,6 +6,7 @@ use App\Filament\BottomNav;
 use App\Filament\InitialsAvatarProvider;
 use App\Filament\Pages\Dashboard;
 use App\Http\Middleware\EnsureSecondFactorWhenRequired;
+use App\Models\Trip;
 use App\Support\Brand;
 use App\Support\PublicAsset;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
@@ -67,6 +68,10 @@ class PortalPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->renderHook(PanelsRenderHook::BODY_END, fn (): string => BottomNav::render())
+            // The sign-in page is the front door: the trips ahead sit under the form.
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn (): string => view('filament.portal.login-trips', [
+                'trips' => Trip::query()->whereIn('status', [Trip::OPEN, Trip::CLOSED, Trip::TRAVELLING])->whereDate('returns_on', '>=', today())->with(['hotels', 'priceTiers'])->orderBy('departs_on')->limit(6)->get(),
+            ])->render())
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

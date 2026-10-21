@@ -6,6 +6,13 @@ pilgrims never sign in here. What it does today is phase 0 of
 reference data (islands, exchange rates, bank and cash accounts), settings,
 and the Telegram bot. Trips and pilgrims come next.
 
+## The front door
+
+hijaz.rihla.mv is the staff portal. The address itself opens the sign-in
+page, which lists the trips ahead (dates, hotels, from-price, seats left)
+for anyone who looks; a signed-in person lands on Today. A customer-facing
+website can take the address over later; the portal stays at `/portal`.
+
 ## The first account
 
 Nothing can be done until one Admin exists. In cPanel → Terminal:

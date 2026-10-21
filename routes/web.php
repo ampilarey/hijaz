@@ -8,9 +8,9 @@ use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// The site is the staff portal: the front door is its sign-in page, which
+// shows the trips ahead, and a signed-in person lands on Today.
+Route::get('/', fn () => redirect(auth()->check() ? '/portal' : '/portal/login'))->name('home');
 
 // Scans leave the private disk only through here: signed, signed-in, audited.
 Route::middleware(['web', 'auth', 'signed'])->group(function (): void {
