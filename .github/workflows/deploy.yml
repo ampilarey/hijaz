@@ -10,6 +10,11 @@ on:
     workflows: ["CI"]
     types: [completed]
     branches: [main]
+  # The "Run workflow" button on the Actions page: deploys the current tip of
+  # main again. For re-running a deploy whose webhook step failed (a missing
+  # secret, the site briefly down), not for skipping CI: the tip of main has
+  # already been through it.
+  workflow_dispatch:
 
 concurrency:
   group: deploy-hijaz
@@ -27,13 +32,15 @@ jobs:
     # Only a green CI run on a push to main deploys. A pull request's CI run
     # tests a merge commit that is not on main and must never reach a server.
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     environment: hijaz
     env:
       # workflow_run's GITHUB_SHA is main's tip, not the commit CI verified.
-      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+      # A manual run has no workflow_run and deploys the tip it was run on.
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - name: Trigger deploy webhook
         env:
@@ -95,6 +102,7 @@ jobs:
   report-blocked:
     name: Deploy skipped (CI red)
     if: >-
+      github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion != 'success' &&
       github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
