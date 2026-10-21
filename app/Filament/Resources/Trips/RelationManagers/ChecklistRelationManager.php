@@ -61,7 +61,7 @@ class ChecklistRelationManager extends RelationManager
             ->defaultSort('due_on')
             ->filters([
                 TernaryFilter::make('done')->label('Done')->default(false)
-                    ->queries(true: fn ($q) => $q->whereNotNull('done_at'), false: fn ($q) => $q->whereNull('done_at'), blank: fn ($q) => $q),
+                    ->queries(true: fn ($query) => $query->whereNotNull('done_at'), false: fn ($query) => $query->whereNull('done_at'), blank: fn ($query) => $query),
             ])
             ->headerActions([
                 CreateAction::make()->label('Add item'),

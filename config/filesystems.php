@@ -38,6 +38,15 @@ return [
             'report' => false,
         ],
 
+        // Scans of identity documents and payment slips. Not servable: only
+        // DocumentController reads it, decrypting in memory, with an audit row.
+        'documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'serve' => false,
+            'throw' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

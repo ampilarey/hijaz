@@ -5,8 +5,10 @@ namespace App\Filament;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Telegram;
 use App\Filament\Resources\Accounts\AccountResource;
+use App\Filament\Resources\Documents\DocumentResource;
 use App\Filament\Resources\ExchangeRates\ExchangeRateResource;
 use App\Filament\Resources\Islands\IslandResource;
+use App\Filament\Resources\Pilgrims\PilgrimResource;
 use App\Filament\Resources\Trips\TripResource;
 use Filament\Facades\Filament;
 
@@ -31,6 +33,8 @@ final class BottomNav
         $candidates = [
             ['Today', Dashboard::class, 'home'],
             ['Trips', TripResource::class, 'trips'],
+            ['Pilgrims', PilgrimResource::class, 'pilgrims'],
+            ['Copies', DocumentResource::class, 'documents'],
             ['Rates', ExchangeRateResource::class, 'rates'],
             ['Accounts', AccountResource::class, 'accounts'],
             ['Islands', IslandResource::class, 'islands'],

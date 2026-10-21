@@ -3,6 +3,18 @@
         <x-slot name="heading">{{ $today }}</x-slot>
         <x-slot name="description">Welcome, {{ $user->name }}.</x-slot>
 
+        @if ($toAccept + $toVerify + $mismatches > 0)
+            <div style="margin-bottom:1rem;">
+                <p style="font-weight:600;">Copies and pilgrims</p>
+                <ul style="margin:.25rem 0 0; padding-left:1rem;">
+                    @if ($toAccept > 0)<li><a href="{{ \App\Filament\Resources\Documents\DocumentResource::getUrl() }}?activeTab=accept">{{ $toAccept }} reading(s) to accept</a></li>@endif
+                    @if ($toVerify > 0)<li><a href="{{ \App\Filament\Resources\Documents\DocumentResource::getUrl() }}?activeTab=verify">{{ $toVerify }} cop(ies) to verify</a></li>@endif
+                    @if ($mismatches > 0)<li><a href="{{ \App\Filament\Resources\Pilgrims\PilgrimResource::getUrl() }}?tableFilters[mismatch][isActive]=1">{{ $mismatches }} pilgrim(s) whose ID card and passport disagree</a></li>@endif
+                    @if ($unverified > 0)<li class="fi-color-gray">{{ $unverified }} registration(s) not yet verified</li>@endif
+                </ul>
+            </div>
+        @endif
+
         @if ($overdue->isNotEmpty())
             <div style="margin-bottom:1rem;">
                 <p style="font-weight:600; color:var(--danger-600, #b91c1c);">Overdue checklist items</p>

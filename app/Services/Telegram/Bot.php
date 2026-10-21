@@ -67,6 +67,18 @@ class Bot
         return $this->call('getWebhookInfo', []);
     }
 
+    /** @return array{file_path?: string, file_size?: int} */
+    public function getFile(string $fileId): array
+    {
+        return (array) $this->call('getFile', ['file_id' => $fileId])->json('result', []);
+    }
+
+    /** The bytes of a file Telegram holds, by the path getFile returned. */
+    public function download(string $filePath): string
+    {
+        return Http::timeout(60)->get(rtrim((string) config('telegram.api_base'), '/').'/file/bot'.config('telegram.bot_token').'/'.$filePath)->throw()->body();
+    }
+
     public function getMe(): Response
     {
         return $this->call('getMe', []);

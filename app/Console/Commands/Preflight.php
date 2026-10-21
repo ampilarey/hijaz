@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Documents\ReaderManager;
 use App\Services\Telegram\Bot;
 use App\Support\Access;
 use Illuminate\Console\Command;
@@ -41,6 +42,8 @@ class Preflight extends Command
         $this->checkBuild();
         $this->checkFilamentAssets();
         $this->checkStorage();
+
+        $this->checkReader();
 
         if ($production) {
             $this->checkProductionEnvironment();
@@ -179,6 +182,18 @@ class Preflight extends Command
 
         if ($minutes > self::SCHEDULE_STALE_MINUTES) {
             $this->warnings[] = ['scheduler', "schedule:run last ran {$minutes} minutes ago; the cron line has stopped — {$fix}"];
+        }
+    }
+
+    private function checkReader(): void
+    {
+        $wanted = (string) config('documents.reader', 'tesseract');
+        $reader = app(ReaderManager::class)->reader();
+
+        if ($wanted !== 'manual' && $reader->name() === 'manual') {
+            $this->warnings[] = ['reader', "DOCUMENTS_READER is {$wanted} but it is not available here; copies are typed by hand (docs/PORTAL.md)"];
+        } else {
+            $this->line("  <fg=green>ok</>    reader — {$reader->name()}");
         }
     }
 

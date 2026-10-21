@@ -91,6 +91,24 @@ final class Access
         'cost.view',
         'cost.create',
         'cost.update',
+
+        'customer.viewAny',
+        'customer.view',
+        'customer.create',
+        'customer.update',
+
+        'pilgrim.viewAny',
+        'pilgrim.view',
+        'pilgrim.create',
+        'pilgrim.update',
+        'pilgrim.verify',
+
+        'document.viewAny',
+        'document.view',
+        'document.create',
+        'document.accept',
+        'document.verify',
+        'document.download',
     ];
 
     /**
@@ -102,6 +120,8 @@ final class Access
         $reference = ['island.viewAny', 'island.view', 'rate.viewAny', 'rate.view', 'account.viewAny', 'account.view', 'setting.view'];
         $checklist = ['checklist.viewAny', 'checklist.view'];
         $costs = ['cost.viewAny', 'cost.view'];
+        $people = ['customer.viewAny', 'customer.view', 'pilgrim.viewAny', 'pilgrim.view', 'document.viewAny', 'document.view'];
+        $registration = ['customer.create', 'customer.update', 'pilgrim.create', 'pilgrim.update', 'document.create', 'document.accept', 'document.download'];
 
         return [
             self::ADMIN => [],
@@ -119,6 +139,10 @@ final class Access
                 'checklist.update',
                 'checklist.delete',
                 'checklist.tick',
+                ...$people,
+                ...$registration,
+                'pilgrim.verify',
+                'document.verify',
             ],
 
             self::FINANCE => [
@@ -132,18 +156,23 @@ final class Access
                 'account.update',
                 'cost.create',
                 'cost.update',
+                ...$people,
             ],
 
             self::REGISTRATION => [
                 ...$everyone,
                 'island.viewAny',
                 'island.view',
+                ...$people,
+                ...$registration,
             ],
 
             self::GROUP_LEADER => [
                 ...$everyone,
                 ...$checklist,
                 'checklist.tick',
+                'pilgrim.viewAny',
+                'pilgrim.view',
             ],
 
             self::READ_ONLY => [
@@ -151,6 +180,7 @@ final class Access
                 ...$reference,
                 ...$checklist,
                 ...$costs,
+                ...$people,
             ],
         ];
     }

@@ -2,9 +2,13 @@
 
 namespace App\Services\Telegram;
 
+use App\Models\Document;
+use App\Models\Pilgrim;
 use App\Models\TelegramLink;
 use App\Models\TelegramUpdate;
 use App\Models\Trip;
+use App\Services\Documents\DocumentWallet;
+use App\Services\Documents\ReaderManager;
 use App\Support\AuditContext;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,10 +27,14 @@ class Router
         private readonly DailySummary $summary,
     ) {}
 
+    /** @var array<string, mixed> */
+    private array $currentMessage = [];
+
     /** @param  array<string, mixed>  $update */
     public function handle(array $update, TelegramUpdate $record): void
     {
         $message = $update['message'] ?? null;
+        $this->currentMessage = is_array($message) ? $message : [];
 
         if (! is_array($message) || ! isset($message['chat']['id'])) {
             $record->forceFill(['kind' => 'ignored', 'handled_at' => now()])->save();
@@ -35,8 +43,13 @@ class Router
         }
 
         $chatId = (int) $message['chat']['id'];
-        $text = trim((string) ($message['text'] ?? ''));
+        $text = trim((string) ($message['text'] ?? $message['caption'] ?? ''));
         [$command, $argument] = $this->parse($text);
+
+        if (isset($message['photo']) || isset($message['document'])) {
+            $command = '/upload';
+            $argument = $text;
+        }
 
         $record->forceFill(['chat_id' => $chatId, 'kind' => 'message', 'command' => $command])->save();
 
@@ -84,6 +97,8 @@ class Router
             ])),
             '/today' => $this->bot->sendMessage($link->chat_id, $this->summary->for($user)),
             '/trip', '/trips' => $this->bot->sendMessage($link->chat_id, $this->trips($argument)),
+            '/find' => $this->bot->sendMessage($link->chat_id, $this->find($argument)),
+            '/upload' => $this->upload($link, $argument, $this->currentMessage),
             '/unlink' => $this->unlink($link),
             default => $this->bot->sendMessage($link->chat_id, "I don't know that one yet. Send /help for what I can do."),
         };
@@ -172,6 +187,111 @@ class Router
         return implode("\n", array_merge(['<b>Upcoming trips</b>'], $trips->map(fn (Trip $t): string => e($t->code).' · '.e($t->name).' · '.e($t->departs_on->format('j M')).' · '.$t->seatsTaken().'/'.$t->capacity_total.' seats · '.e(strtolower($t->statusLabel())))->all(), ['', 'Send /trip CODE for one trip.']));
     }
 
+    private function find(string $argument): string
+    {
+        $term = trim($argument);
+
+        if ($term === '') {
+            return 'Send /find A123456 or /find part of a name.';
+        }
+
+        $query = Pilgrim::query()->with(['customer', 'documents']);
+
+        if (preg_match('/^[Aa]\s?\d{6}$/', $term)) {
+            $query->withIdNumber($term);
+        } else {
+            $query->where(fn ($q) => $q->where('name_en', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"));
+        }
+
+        $pilgrims = $query->limit(5)->get();
+
+        if ($pilgrims->isEmpty()) {
+            return 'Nobody matches "'.e($term).'".';
+        }
+
+        return $pilgrims->map(function (Pilgrim $p): string {
+            $docs = collect(Document::REQUIRED_FOR_PILGRIMS)->map(fn (string $t): string => Document::TYPES[$t].': '.($p->document($t)?->status ?? 'missing'))->implode(', ');
+
+            return implode("\n", array_filter([
+                '<b>'.e($p->name_en).'</b> · #'.$p->id.' · '.e($p->registration_status),
+                e($p->idNumberMasked() ?? 'no ID number').' · '.e($p->customer?->name ?? ''),
+                $p->phone ? e($p->phone) : null,
+                $docs,
+                $p->unexplainedMismatches() !== [] ? '⚠ ID card and passport disagree' : null,
+            ]));
+        })->implode("\n\n");
+    }
+
+    /**
+     * A photo or file sent to the bot with the pilgrim's ID number in the
+     * caption, and optionally the type: "A123456 passport". Stored exactly
+     * as an upload in the portal would be, and read.
+     *
+     * @param  array<string, mixed>  $message
+     */
+    private function upload(TelegramLink $link, string $caption, array $message): void
+    {
+        if (! $link->user->can('document.create')) {
+            $this->bot->sendMessage($link->chat_id, 'Your account cannot upload copies.');
+
+            return;
+        }
+
+        if (! preg_match('/([Aa]\s?\d{6})/', $caption, $m)) {
+            $this->bot->sendMessage($link->chat_id, "Add the pilgrim's ID number to the caption, like <b>A123456 passport</b>. Types: id, passport, photo, visa.");
+
+            return;
+        }
+
+        $pilgrim = Pilgrim::findByIdNumber($m[1]);
+
+        if ($pilgrim === null) {
+            $this->bot->sendMessage($link->chat_id, 'No pilgrim has the ID number '.e(strtoupper($m[1])).'. Register them in the portal first.');
+
+            return;
+        }
+
+        $type = match (true) {
+            (bool) preg_match('/passport/i', $caption) => Document::PASSPORT,
+            (bool) preg_match('/photo/i', $caption) => Document::PHOTO,
+            (bool) preg_match('/visa/i', $caption) => Document::VISA,
+            (bool) preg_match('/vacc/i', $caption) => Document::VACCINATION,
+            default => Document::ID_CARD,
+        };
+
+        if (isset($message['photo'])) {
+            $photos = $message['photo'];
+            $largest = end($photos);
+            $fileId = (string) $largest['file_id'];
+            $name = 'telegram-'.$largest['file_unique_id'].'.jpg';
+            $mime = 'image/jpeg';
+        } else {
+            $fileId = (string) $message['document']['file_id'];
+            $name = (string) ($message['document']['file_name'] ?? 'telegram-file');
+            $mime = (string) ($message['document']['mime_type'] ?? 'application/octet-stream');
+        }
+
+        if (! in_array($mime, (array) config('documents.mime_types'), true)) {
+            $this->bot->sendMessage($link->chat_id, 'Send a photo, or a PDF or JPEG file.');
+
+            return;
+        }
+
+        $info = $this->bot->getFile($fileId);
+        $bytes = $this->bot->download((string) ($info['file_path'] ?? ''));
+
+        $wallet = app(DocumentWallet::class);
+        $version = $wallet->store($pilgrim, $bytes, $name, $mime, $type);
+        $reply = Document::TYPES[$type].' saved for <b>'.e($pilgrim->name_en).'</b>.';
+
+        if ($version->document->isReadable()) {
+            $x = app(ReaderManager::class)->read($version);
+            $reply .= ' '.count($x->fields ?? []).' fields read; accept them in the portal.';
+        }
+
+        $this->bot->sendMessage($link->chat_id, $reply);
+    }
+
     private function help(string $name, bool $greeting = true): string
     {
         $lines = $greeting ? ['Hello '.e($name).'. I can:', ''] : ['I can:', ''];
@@ -179,6 +299,8 @@ class Router
         return implode("\n", array_merge($lines, [
             '/today — this morning\'s summary',
             '/trip — upcoming trips, or /trip UMR-2027-07 for one',
+            '/find A123456 — a pilgrim by ID number or name',
+            'Send a photo with "A123456 passport" as the caption to upload a copy',
             '/me — who this chat acts as',
             '/unlink — stop acting as you',
             '/help — this list',

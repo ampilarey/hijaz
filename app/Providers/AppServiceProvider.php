@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Account;
+use App\Models\Customer;
+use App\Models\Document;
 use App\Models\ExchangeRate;
 use App\Models\Island;
+use App\Models\Pilgrim;
 use App\Models\PriceTier;
 use App\Models\Setting;
 use App\Models\TelegramLink;
@@ -66,5 +69,8 @@ class AppServiceProvider extends ServiceProvider
         TripExcursion::class,
         TripCost::class,
         PriceTier::class,
+        Customer::class,
+        Pilgrim::class,
+        Document::class,
     ];
 }
