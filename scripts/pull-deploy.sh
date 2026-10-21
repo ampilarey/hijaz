@@ -16,7 +16,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export HOME="${HOME:-$(dirname "$ROOT")}"
 export PATH="$HOME/bin:/usr/local/bin:/opt/cpanel/ea-php84/root/usr/bin:/opt/cpanel/composer/bin:/usr/bin:/bin:${PATH:-}"
 
-LOCK="$HOME/.hijaz-deploy.lock"
+LOCK="$ROOT/storage/deploy.lock"
 EXPECTED_SHA="${1:-}"
 
 log() { echo "$(date '+%F %T') $*"; }

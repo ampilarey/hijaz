@@ -6,7 +6,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$ROOT/scripts/self-update.sh"
-LOG="$HOME/hijaz-deploy.log"
+LOG="$ROOT/storage/logs/deploy.log"
 CRON_LINE="* * * * * $SCRIPT >> $LOG 2>&1"
 
 export PATH="$HOME/bin:/usr/local/bin:/opt/cpanel/ea-php84/root/usr/bin:/opt/cpanel/composer/bin:/usr/bin:/bin:$PATH"

@@ -9,8 +9,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NAME="$(basename "$ROOT")"
-LOG="$HOME/schedule-$NAME.log"
+LOG="$ROOT/storage/logs/scheduler.log"
 
 export PATH="$HOME/bin:/usr/local/bin:/opt/cpanel/ea-php84/root/usr/bin:/usr/bin:/bin:$PATH"
 

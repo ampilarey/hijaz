@@ -114,7 +114,7 @@ Merge anything to `main` (or push to it). Watch **Actions**:
    site until it reports the new commit.
 
 Both green, and https://hijaz.rihla.mv serves that commit. On the server,
-`tail -f ~/hijaz-deploy.log` shows the pull.
+`tail -f ~/hijaz/storage/logs/deploy.log` shows the pull.
 
 ## What got installed where
 
@@ -123,8 +123,8 @@ Both green, and https://hijaz.rihla.mv serves that commit. On the server,
 | Application | `/home/rihla/hijaz` |
 | Document root | `/home/rihla/hijaz/public` |
 | Environment file | `/home/rihla/hijaz/.env` (never in git) |
-| Deploy log | `/home/rihla/hijaz-deploy.log` |
-| Scheduler log | `/home/rihla/schedule-hijaz.log` |
+| Deploy log | `/home/rihla/hijaz/storage/logs/deploy.log` |
+| Scheduler log | `/home/rihla/hijaz/storage/logs/scheduler.log` |
 | Cron: scheduler | `* * * * * cd /home/rihla/hijaz && php artisan schedule:run` |
 | Cron: deploy fallback | `* * * * * /home/rihla/hijaz/scripts/self-update.sh` |
 | Uploaded files | `/home/rihla/hijaz/storage/app/public` (served via `public/storage`) |

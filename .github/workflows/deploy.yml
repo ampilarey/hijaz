@@ -89,7 +89,7 @@ jobs:
             fi
           done
 
-          echo "::error::${SITE_URL} is not serving ${DEPLOY_SHA} after 7 minutes. Check ~/hijaz-deploy.log on the server."
+          echo "::error::${SITE_URL} is not serving ${DEPLOY_SHA} after 7 minutes. Check storage/logs/deploy.log in the checkout on the server."
           exit 1
 
   report-blocked:

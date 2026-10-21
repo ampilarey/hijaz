@@ -36,11 +36,11 @@ return [
     | Where the pull script writes its log
     |--------------------------------------------------------------------------
     |
-    | Defaults to the directory above the checkout, which on cPanel is the
-    | account's home: /home/<account>/hijaz-deploy.log.
+    | Inside the checkout, next to Laravel's own logs, so everything about
+    | the site lives in one folder.
     |
     */
 
-    'log' => env('DEPLOY_LOG', dirname(base_path()).'/hijaz-deploy.log'),
+    'log' => env('DEPLOY_LOG', storage_path('logs/deploy.log')),
 
 ];

@@ -53,7 +53,7 @@ deploys a red commit either.
   `DEPLOY_ALLOWED_HOSTS`, `401` on a wrong secret.
 - **A deploy that only started is not reported as done.** The workflow checks
   which commit is live, not whether the homepage answers.
-- **One deploy at a time.** A lock directory in the home folder serialises the
+- **One deploy at a time.** A lock directory in `storage/` serialises the
   webhook and the cron.
 
 ## When a deploy goes wrong
@@ -63,7 +63,7 @@ deploys a red commit either.
 | Workflow step "Trigger deploy webhook" is red with `404` | Secret missing from server `.env`, or `APP_URL`/`DEPLOY_ALLOWED_HOSTS` do not name `hijaz.rihla.mv`. Run `php artisan config:cache` after fixing `.env`. |
 | `401` | Secret on GitHub (environment `hijaz`) differs from the server `.env`. |
 | `503 Unable to spawn` | `proc_open` disabled for PHP on the host. The cron fallback still deploys within a minute; the workflow's verify step will then pass on a re-run. |
-| Verify step times out | `tail -50 ~/hijaz-deploy.log` on the server. Usual causes: fast-forward refused (someone committed on the server), `composer install` failure, a migration error. |
+| Verify step times out | `tail -50 ~/hijaz/storage/logs/deploy.log` on the server. Usual causes: fast-forward refused (someone committed on the server), `composer install` failure, a migration error. |
 | Site is 500 after a deploy | `tail -50 /home/rihla/hijaz/storage/logs/laravel-$(date +%F).log` |
 
 Deploy by hand, if ever needed:

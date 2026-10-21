@@ -182,5 +182,5 @@ echo
 grep -E '^DEPLOY_WEBHOOK_SECRET=' .env | cut -d= -f2-
 echo
 echo "Then check:  curl -s https://$HOST/api/health"
-echo "Log:         tail -f ~/hijaz-deploy.log"
+echo "Log:         tail -f $ROOT/storage/logs/deploy.log"
 echo "================================================================"

@@ -7,7 +7,7 @@
 # are all green, so it cannot put untested code on the site either.
 #
 # Install once:  bash scripts/install-self-update-cron.sh
-# Watch:         tail -f ~/hijaz-deploy.log
+# Watch:         tail -f storage/logs/deploy.log
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
