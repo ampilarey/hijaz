@@ -1,0 +1,103 @@
+name: Deploy hijaz.rihla.mv
+
+# Runs after CI passes on main, not when main is pushed. A red CI run deploys
+# nothing and says so; the site keeps serving the last commit that passed.
+#
+# Cron (scripts/self-update.sh) remains a fallback if the webhook fails.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-hijaz
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SITE_URL: https://hijaz.rihla.mv
+
+jobs:
+  deploy:
+    name: Webhook pull (hijaz.rihla.mv)
+    # Only a green CI run on a push to main deploys. A pull request's CI run
+    # tests a merge commit that is not on main and must never reach a server.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    environment: hijaz
+    env:
+      # workflow_run's GITHUB_SHA is main's tip, not the commit CI verified.
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Trigger deploy webhook
+        env:
+          DEPLOY_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
+        run: |
+          if [ -z "${DEPLOY_SECRET}" ]; then
+            echo "::error::DEPLOY_WEBHOOK_SECRET missing on GitHub environment 'hijaz'"
+            exit 1
+          fi
+
+          echo "Deploying ${DEPLOY_SHA} (CI run ${{ github.event.workflow_run.id }})"
+
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -sS -o /tmp/deploy-webhook.json -w "%{http_code}" \
+              -X POST "${SITE_URL}/api/deploy/pull" \
+              -H "Authorization: Bearer ${DEPLOY_SECRET}" \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
+              -d "{\"sha\":\"${DEPLOY_SHA}\"}")
+            echo "Attempt ${attempt}: HTTP ${code}"
+            cat /tmp/deploy-webhook.json || true
+            echo ""
+            if [ "$code" = "202" ]; then
+              echo "Deploy triggered for ${DEPLOY_SHA}"
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "::error::Webhook deploy failed after retries"
+          exit 1
+
+      # A 202 means the pull *started*. Ask the site which commit it is
+      # running; that is the only check that tells a deploy that landed from
+      # one that only started.
+      - name: Verify the deployed commit is live
+        env:
+          DEPLOY_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
+        run: |
+          for attempt in $(seq 1 30); do
+            sleep 15
+            body=$(curl -sS --max-time 20 \
+              -H "Authorization: Bearer ${DEPLOY_SECRET}" \
+              -H "Accept: application/json" \
+              "${SITE_URL}/api/health" || echo '{}')
+            live=$(printf '%s' "$body" | jq -r '.commit // empty')
+            echo "Attempt ${attempt}: live=${live:-unknown} want=${DEPLOY_SHA}"
+
+            if [ "$live" = "${DEPLOY_SHA}" ]; then
+              echo "${SITE_URL} is serving ${DEPLOY_SHA}"
+              curl -fsS -o /dev/null -w "home %{http_code}\n" "${SITE_URL}/"
+              exit 0
+            fi
+          done
+
+          echo "::error::${SITE_URL} is not serving ${DEPLOY_SHA} after 7 minutes. Check ~/hijaz-deploy.log on the server."
+          exit 1
+
+  report-blocked:
+    name: Deploy skipped (CI red)
+    if: >-
+      github.event.workflow_run.conclusion != 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::warning::CI concluded '${{ github.event.workflow_run.conclusion }}' on ${{ github.event.workflow_run.head_sha }}. hijaz.rihla.mv was not deployed and is still serving the last commit that passed."

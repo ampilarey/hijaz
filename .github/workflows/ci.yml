@@ -1,0 +1,117 @@
+name: CI
+
+# Runs on every pull request and on every push to main. The deploy workflow
+# waits for this to pass before hijaz.rihla.mv is updated, so a red run here
+# keeps the previous commit serving.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.3 is the composer floor; the cPanel host runs ea-php84.
+        php: ['8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, ctype, json, tokenizer, pdo, pdo_sqlite, gd
+          coverage: none
+
+      - name: Cache composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ matrix.php }}-
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - run: php artisan test
+
+  static:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Pint
+        run: vendor/bin/pint --test
+
+  assets:
+    name: Committed build is current
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # public/build is committed because the cPanel host has no Node, and the
+    # deploy serves exactly what is in git. This stops a stale build shipping.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Fail if the committed assets differ from a fresh build
+        run: |
+          if ! git diff --quiet -- public/build || [ -n "$(git status --porcelain -- public/build)" ]; then
+            echo "::error::public/build is out of date. Run 'npm run build' and commit the result."
+            git status --porcelain -- public/build
+            exit 1
+          fi
+          echo "Committed build matches a fresh build."
+
+  security:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer audit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
