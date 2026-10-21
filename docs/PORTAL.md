@@ -16,10 +16,15 @@ website can take the address over later; the portal stays at `/portal`.
 ## Signing in
 
 With an email address or a mobile number, and the password. A number can
-be typed as 777 5123; the country code is added. Admin and Finance accounts
-also type the six-digit code from their authenticator app. Each staff
-account's number is set under Admin → Staff; the first admin can be given
-one with `--phone=7775123` on the command below.
+be typed as 777 5123; the country code is added. Each staff account's
+number is set under Admin → Staff; the first admin can be given one with
+`--phone=7775123` on the command below.
+
+An authenticator app is optional. Anyone who wants one opens their profile
+(the menu under their name) and taps *Set up two-factor authentication*;
+from then on they type its six-digit code after the password. To make it
+compulsory for Admin and Finance, set `PORTAL_SECOND_FACTOR_REQUIRED=true`
+in the server `.env`.
 
 ## The first account
 
@@ -39,9 +44,9 @@ Admin role, and is the way back in if every Admin is ever lost.
 
 | Role | Can |
 | --- | --- |
-| Admin | Everything, including staff accounts, settings and the audit trail. Needs an authenticator app. |
+| Admin | Everything, including staff accounts, settings and the audit trail. |
 | Operations | Reference data, islands, trips, pilgrims and documents, bookings and recording payments, buses, rooms, visas, cards and lists. |
-| Finance | Exchange rates, accounts, verifying and refunding payments, discounts, lists and the readiness board, and from phase 6 the ledger. Needs an authenticator app. |
+| Finance | Exchange rates, accounts, verifying and refunding payments, discounts, lists, the readiness board and the books. |
 | Registration | Islands (read), pilgrim registration and documents, bookings and recording payments, visa statuses, printing cards, lists. |
 | Group leader | Checklist ticks, pilgrims and bookings (read), additional trips and recording the riyal paid for them, buses and rooms (read), the Scan page and bus check-in, lists. |
 | Read only | Lists and the readiness board, no changes. |
@@ -336,7 +341,7 @@ better; that is the owner's call because the image leaves the server.
 | --- | --- |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | The bot. Empty switches it off. |
 | `TELEGRAM_WEBHOOK_SECRET` | Optional; derived from the app key when unset. |
-| `PORTAL_SECOND_FACTOR_REQUIRED` | `true` by default. `false` only for a first sign-in on a phone with no authenticator app yet, and back to `true` the same day. |
+| `PORTAL_SECOND_FACTOR_REQUIRED` | `false` by default: the authenticator app is optional. `true` makes Admin and Finance set one up before they can use the portal. |
 | `APP_TIMEZONE` | `Indian/Maldives` by default. |
 | `BOOKING_HOLD_DAYS` | How long a draft booking keeps its seats. `7` by default. |
 | `VISA_SLA_DAYS` | Days after a visa is submitted before the board calls it late. `7` by default. |

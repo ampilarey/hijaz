@@ -68,7 +68,7 @@
             </div>
             <div>
                 <dt style="font-weight:600;">Authenticator app</dt>
-                <dd>{{ $secondFactor ? 'Set up.' : 'Not set up. Add one from your profile menu.' }}</dd>
+                <dd>{{ $secondFactor ? 'Set up.' : 'Optional. Add one from your profile menu if you want a code asked after your password.' }}</dd>
             </div>
             <div>
                 <dt style="font-weight:600;">Telegram</dt>

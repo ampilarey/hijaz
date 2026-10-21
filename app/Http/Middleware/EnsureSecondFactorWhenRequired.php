@@ -10,10 +10,11 @@ use Illuminate\Http\Request;
 
 /**
  * Filament's own middleware sends every user to set up a second factor.
- * Hijaz wants that only for the roles that handle money and user accounts
- * (Access::SECOND_FACTOR_ROLES); everyone else may add one but is not made
- * to. Decided per request, because the panel decides its requirement at
- * boot, before anyone is signed in.
+ * Hijaz keeps it optional: anyone may add one from their profile, and only
+ * when PORTAL_SECOND_FACTOR_REQUIRED is on are the roles that handle money
+ * and user accounts (Access::SECOND_FACTOR_ROLES) made to. Decided per
+ * request, because the panel decides its requirement at boot, before
+ * anyone is signed in.
  */
 class EnsureSecondFactorWhenRequired
 {
