@@ -29,8 +29,8 @@ class CreateAdmin extends Command
             return self::FAILURE;
         }
 
-        if (mb_strlen($password) < 12) {
-            $this->error('The password needs at least 12 characters.');
+        if (mb_strlen($password) < 8) {
+            $this->error('The password needs at least 8 characters.');
 
             return self::FAILURE;
         }

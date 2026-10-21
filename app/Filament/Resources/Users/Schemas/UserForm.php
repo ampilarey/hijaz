@@ -36,12 +36,12 @@ class UserForm
                 TextInput::make('password')
                     ->password()
                     ->revealable()
-                    ->minLength(12)
+                    ->minLength(8)
                     ->maxLength(200)
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->dehydrated(fn (?string $state): bool => filled($state))
                     ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
-                    ->helperText('At least 12 characters. Leave blank to keep the current one.'),
+                    ->helperText('At least 8 characters. Leave blank to keep the current one.'),
                 Select::make('roles')
                     ->relationship('roles', 'name')
                     ->multiple()

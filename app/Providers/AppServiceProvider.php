@@ -63,7 +63,7 @@ class AppServiceProvider extends ServiceProvider
         // before anyone has thought about which role gets them.
         Gate::before(fn (User $user): ?bool => $user->hasRole(Access::ADMIN) ? true : null);
 
-        Password::defaults(fn () => Password::min(12));
+        Password::defaults(fn () => Password::min(8));
 
         foreach (self::AUDITED as $model) {
             $model::observe(AuditObserver::class);

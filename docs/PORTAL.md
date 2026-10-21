@@ -27,7 +27,7 @@ Nothing can be done until one Admin exists. In cPanel → Terminal:
 
 ```bash
 cd /home/rihla/hijaz
-php artisan portal:admin you@example.com 'a password of at least 12 characters'
+php artisan portal:admin you@example.com 'a password of at least 8 characters'
 ```
 
 Then sign in at `/portal`. Admin and Finance are asked to set up an
