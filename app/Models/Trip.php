@@ -187,6 +187,18 @@ class Trip extends Model
         return $this->hasMany(UsdAllocation::class);
     }
 
+    /** @return HasMany<RollCall, $this> */
+    public function rollCalls(): HasMany
+    {
+        return $this->hasMany(RollCall::class)->orderByDesc('taken_at');
+    }
+
+    /** @return HasMany<Incident, $this> */
+    public function incidents(): HasMany
+    {
+        return $this->hasMany(Incident::class)->orderByDesc('happened_at');
+    }
+
     /** @return HasMany<BusGroup, $this> */
     public function busGroups(): HasMany
     {

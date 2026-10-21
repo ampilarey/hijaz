@@ -17,4 +17,7 @@ return [
     // Days after a visa is submitted before it counts as late.
     'visa_sla_days' => (int) env('VISA_SLA_DAYS', 7),
 
+    // How long a customer's one-time link to their booking page stays open.
+    'self_service_days' => (int) env('SELF_SERVICE_LINK_DAYS', 30),
+
 ];

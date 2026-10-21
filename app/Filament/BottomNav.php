@@ -37,6 +37,7 @@ final class BottomNav
         $fifth = match (true) {
             (bool) $user?->can('payment.verify') => ['Payments', PaymentResource::class, 'payments'],
             (bool) $user?->can('document.accept') => ['Copies', DocumentResource::class, 'documents'],
+            (bool) $user?->can('ground.view') => ['Ground', 'ground', 'ground'],
             default => ['Scan', Scan::class, 'scan'],
         };
 
@@ -59,11 +60,13 @@ final class BottomNav
         $items = [];
 
         foreach ($candidates as [$label, $class, $icon]) {
-            if (! $class::canAccess()) {
+            if ($class === 'ground') {
+                $url = route('ground.index');
+            } elseif (! $class::canAccess()) {
                 continue;
+            } else {
+                $url = $class::getUrl();
             }
-
-            $url = $class::getUrl();
 
             $items[] = [
                 'label' => $label,

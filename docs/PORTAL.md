@@ -282,6 +282,39 @@ better; that is the owner's call because the image leaves the server.
 - Book categories are under Reference; new ones can be added, old ones
   deactivated, never deleted.
 
+## On the ground and the customer's own page
+
+- **Ground** (`/ground`, and the bottom bar for group leaders) is the
+  leader's phone page: the trips they lead a bus on, their people with bus,
+  rooms and a call button, head counts, incidents, and the riyal to collect
+  for additional trips. Open it once with a signal and it keeps working
+  without one: every tap is saved on the phone first and sent when the
+  signal returns, in order, and a retry never makes a second record. The
+  banner at the top says what is still waiting to send. The page clears
+  its local copy when the person signs out.
+- **Head counts**: *Start a count* at every move (boarding, lobby, airport),
+  for one bus or the whole trip, then tap Here / Not here / Excused by each
+  name. The phone's clock decides between two marks for the same person. The
+  trip's *Head counts* tab in the portal shows each count and who is still
+  unaccounted for, with their phone numbers.
+- **Incidents**: raised from the ground page (or logged by the office under
+  Trips → Incidents) with severity, category, who, where and what happened.
+  Serious and emergency incidents go to everyone who may see incidents on
+  Telegram at once. The office resolves them with what was done.
+- **Riyal on the ground**: *Paid SAR …* beside each additional-trip booking
+  records cash into that leader's own float account, verified at once; the
+  leader hands the float to Finance after the trip as a transfer in the
+  Books.
+- **The customer's own page** (`/my`): *Link for the customer* on a booking
+  makes a personal link to paste on WhatsApp or Viber, good for
+  `SELF_SERVICE_LINK_DAYS` (30). With it the customer sees the trip and
+  hotels, totals, what is paid and owed, the instalments, the bank accounts
+  to pay into, their travellers and which copies are on file, and can send
+  bank slips and missing copies from the phone. Everything they send
+  arrives exactly as an upload in the portal would, marked channel `self`,
+  read, and waiting for staff. *Cancel customer links* on the booking turns
+  the links off.
+
 ## Settings in `.env`
 
 | Key | Meaning |
@@ -292,6 +325,7 @@ better; that is the owner's call because the image leaves the server.
 | `APP_TIMEZONE` | `Indian/Maldives` by default. |
 | `BOOKING_HOLD_DAYS` | How long a draft booking keeps its seats. `7` by default. |
 | `VISA_SLA_DAYS` | Days after a visa is submitted before the board calls it late. `7` by default. |
+| `SELF_SERVICE_LINK_DAYS` | How long a customer's link to their own booking page works. `30` by default. |
 | `INVOICE_TAX_NOTE`, `INVOICE_TERMS_NOTE` | Printed in the footer of invoices and receipts when set. |
 
 ## Conventions for the code

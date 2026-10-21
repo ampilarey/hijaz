@@ -144,6 +144,12 @@ class Booking extends Model implements TakesPayments
         return $this->hasMany(BookingStatusTransition::class)->orderBy('id');
     }
 
+    /** @return HasMany<PortalAccess, $this> */
+    public function accesses(): HasMany
+    {
+        return $this->hasMany(PortalAccess::class);
+    }
+
     /** @return HasMany<ExcursionBooking, $this> */
     public function excursionBookings(): HasMany
     {

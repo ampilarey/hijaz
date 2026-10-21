@@ -166,6 +166,17 @@ final class Access
         'ledgerCategory.update',
         'report.view',
         'usdList.update',
+
+        'ground.view',
+        'rollCall.viewAny',
+        'rollCall.view',
+        'rollCall.create',
+        'rollCall.mark',
+        'incident.viewAny',
+        'incident.view',
+        'incident.create',
+        'incident.resolve',
+        'selfService.issue',
     ];
 
     /**
@@ -180,6 +191,7 @@ final class Access
         $people = ['customer.viewAny', 'customer.view', 'pilgrim.viewAny', 'pilgrim.view', 'document.viewAny', 'document.view'];
         $registration = ['customer.create', 'customer.update', 'pilgrim.create', 'pilgrim.update', 'document.create', 'document.accept', 'document.download'];
         $money = ['booking.viewAny', 'booking.view', 'payment.viewAny', 'payment.view', 'excursionBooking.viewAny', 'excursionBooking.view'];
+        $onTheGround = ['ground.view', 'rollCall.viewAny', 'rollCall.view', 'rollCall.create', 'rollCall.mark', 'incident.viewAny', 'incident.view', 'incident.create'];
         $books = ['ledger.viewAny', 'ledger.view', 'ledgerCategory.viewAny', 'ledgerCategory.view', 'report.view'];
         $ground = ['bus.viewAny', 'bus.view', 'room.viewAny', 'room.view', 'card.viewAny', 'card.view', 'list.view', 'readiness.view'];
         $operations = ['bus.create', 'bus.update', 'bus.delete', 'bus.assign', 'room.create', 'room.update', 'room.delete', 'room.assign', 'card.create', 'card.scan', 'pilgrim.checkIn', 'visa.update'];
@@ -211,6 +223,9 @@ final class Access
                 ...$operations,
                 'report.view',
                 'usdList.update',
+                ...$onTheGround,
+                'incident.resolve',
+                'selfService.issue',
             ],
 
             self::FINANCE => [
@@ -238,6 +253,9 @@ final class Access
                 'ledgerCategory.create',
                 'ledgerCategory.update',
                 'usdList.update',
+                'incident.viewAny',
+                'incident.view',
+                'selfService.issue',
             ],
 
             self::REGISTRATION => [
@@ -252,6 +270,7 @@ final class Access
                 'card.create',
                 'card.scan',
                 'visa.update',
+                'selfService.issue',
             ],
 
             self::GROUP_LEADER => [
@@ -267,6 +286,7 @@ final class Access
                 ...$ground,
                 'card.scan',
                 'pilgrim.checkIn',
+                ...$onTheGround,
             ],
 
             self::READ_ONLY => [
@@ -278,6 +298,10 @@ final class Access
                 ...$money,
                 ...$ground,
                 ...$books,
+                'rollCall.viewAny',
+                'rollCall.view',
+                'incident.viewAny',
+                'incident.view',
             ],
         ];
     }

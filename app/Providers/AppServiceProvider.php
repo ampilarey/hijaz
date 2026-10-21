@@ -14,6 +14,7 @@ use App\Models\Document;
 use App\Models\ExchangeRate;
 use App\Models\ExcursionBooking;
 use App\Models\ExcursionParticipant;
+use App\Models\Incident;
 use App\Models\Island;
 use App\Models\LedgerCategory;
 use App\Models\LedgerEntry;
@@ -21,7 +22,10 @@ use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\PaymentSchedule;
 use App\Models\Pilgrim;
+use App\Models\PortalAccess;
 use App\Models\PriceTier;
+use App\Models\RollCall;
+use App\Models\RollCallMark;
 use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\Setting;
@@ -104,5 +108,9 @@ class AppServiceProvider extends ServiceProvider
         LedgerCategory::class,
         LedgerEntry::class,
         UsdAllocation::class,
+        RollCall::class,
+        RollCallMark::class,
+        Incident::class,
+        PortalAccess::class,
     ];
 }

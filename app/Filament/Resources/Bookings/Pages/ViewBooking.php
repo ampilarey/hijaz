@@ -8,6 +8,7 @@ use App\Filament\Resources\Bookings\BookingResource;
 use App\Models\Booking;
 use App\Models\Discount;
 use App\Services\Bookings\BookingDesk;
+use App\Services\SelfService\Gatekeeper;
 use App\Support\Currency;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -72,7 +73,31 @@ class ViewBooking extends ViewRecord
                 ->authorize('view', $booking)
                 ->url(fn (): string => route('bookings.invoice', $booking), shouldOpenInNewTab: true),
 
+            Action::make('share')
+                ->label('Link for the customer')
+                ->icon('heroicon-o-link')
+                ->color('gray')
+                ->visible(fn (): bool => $booking->isLive())
+                ->authorize(fn (): bool => (bool) auth()->user()?->can('selfService.issue'))
+                ->modalHeading('A link to their own booking page')
+                ->modalDescription('Paste it to the customer on WhatsApp or Viber. They see the trip, the balance, their copies, and can send slips and copies. It works for '.config('booking.self_service_days', 30).' days and is theirs alone; making a new one does not cancel the old.')
+                ->modalSubmitActionLabel('Make a link')
+                ->action(function (Gatekeeper $gate) use ($booking): void {
+                    $issued = $gate->issue($booking, auth()->user());
+                    Notification::make()->success()->title('Link made')->body($issued['url'])->persistent()
+                        ->actions([Action::make('copy')->label('Copy')->button()->extraAttributes(['x-on:click' => 'window.navigator.clipboard.writeText('.json_encode($issued['url']).')'])])
+                        ->send();
+                }),
             ActionGroup::make([
+                Action::make('revoke_links')
+                    ->label('Cancel customer links')
+                    ->icon('heroicon-o-link-slash')
+                    ->visible(fn (): bool => $booking->accesses()->live()->exists())
+                    ->authorize(fn (): bool => (bool) auth()->user()?->can('selfService.issue'))
+                    ->requiresConfirmation()
+                    ->action(function (Gatekeeper $gate) use ($booking): void {
+                        Notification::make()->success()->title($gate->revokeAll($booking).' link(s) cancelled')->send();
+                    }),
                 Action::make('discount')
                     ->label('Give a discount')
                     ->icon('heroicon-o-receipt-percent')

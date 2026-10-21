@@ -15,6 +15,7 @@ use App\Filament\Resources\Trips\RelationManagers\ExcursionsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\FlightsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\HotelsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\PriceTiersRelationManager;
+use App\Filament\Resources\Trips\RelationManagers\RollCallsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\RoomsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\StopsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\TravellersRelationManager;
@@ -55,6 +56,7 @@ class TripResource extends Resource
             TravellersRelationManager::class,
             BusesRelationManager::class,
             RoomsRelationManager::class,
+            RollCallsRelationManager::class,
             FlightsRelationManager::class,
             HotelsRelationManager::class,
             StopsRelationManager::class,

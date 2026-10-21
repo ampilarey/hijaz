@@ -17,6 +17,9 @@ final class AuditContext
 
     public const API = 'api';
 
+    /** A customer on their own booking page, by one-time link. */
+    public const SELF = 'self';
+
     private static ?string $channel = null;
 
     public static function channel(): string
