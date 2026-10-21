@@ -1,7 +1,7 @@
 {
-  "_fonts-C9MNnjVw.css": {
-    "file": "assets/fonts-C9MNnjVw.css",
-    "src": "_fonts-C9MNnjVw.css"
+  "_fonts-DnKTtnOv.css": {
+    "file": "assets/fonts-DnKTtnOv.css",
+    "src": "_fonts-DnKTtnOv.css"
   },
   "_instrument-sans-400-normal-D1W7dsQl.woff": {
     "file": "assets/instrument-sans-400-normal-D1W7dsQl.woff",
@@ -27,8 +27,24 @@
     "file": "assets/instrument-sans-600-normal-B9e8oLYv.woff",
     "src": "_instrument-sans-600-normal-B9e8oLYv.woff"
   },
+  "_tinos-400-normal-B05awSIM.woff": {
+    "file": "assets/tinos-400-normal-B05awSIM.woff",
+    "src": "_tinos-400-normal-B05awSIM.woff"
+  },
+  "_tinos-400-normal-rilFpyjL.woff2": {
+    "file": "assets/tinos-400-normal-rilFpyjL.woff2",
+    "src": "_tinos-400-normal-rilFpyjL.woff2"
+  },
+  "_tinos-700-normal-CjcRkLdR.woff": {
+    "file": "assets/tinos-700-normal-CjcRkLdR.woff",
+    "src": "_tinos-700-normal-CjcRkLdR.woff"
+  },
+  "_tinos-700-normal-qGf2y18O.woff2": {
+    "file": "assets/tinos-700-normal-qGf2y18O.woff2",
+    "src": "_tinos-700-normal-qGf2y18O.woff2"
+  },
   "resources/css/app.css": {
-    "file": "assets/app-CFRKnXKT.css",
+    "file": "assets/app-12gQk4nE.css",
     "name": "app",
     "names": [
       "app.css"
