@@ -19,6 +19,8 @@ class TodayWidget extends Widget
     protected string $view = 'filament.widgets.today';
 
     /** Rendered with the page, not lazily after it: the queues are the page. */
+    protected static ?int $sort = 2;
+
     protected static bool $isLazy = false;
 
     protected int|string|array $columnSpan = 'full';

@@ -212,3 +212,24 @@
         display: none;
     }
 }
+
+/* Home-page figures: two to a row on a phone, so the number is sized to fit half the screen. */
+.fi-wi-stats-overview-stat {
+    padding: 1rem;
+}
+
+.fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-value {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+}
+
+@media (min-width: 48rem) {
+    .fi-wi-stats-overview-stat {
+        padding: 1.5rem;
+    }
+
+    .fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-value {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+    }
+}
