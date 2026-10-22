@@ -110,7 +110,8 @@ final class Gatekeeper
         }
 
         return Customer::query()->whereNotNull('portal_password')->get()
-            ->first(fn (Customer $c): bool => Phone::normalise((string) $c->phone) === $number && Hash::check($password, (string) $c->portal_password));
+            // The family's phone or its contact person's own mobile, either one signs in.
+            ->first(fn (Customer $c): bool => in_array($number, [Phone::normalise((string) $c->phone), Phone::normalise((string) $c->contactPhone())], true) && Hash::check($password, (string) $c->portal_password));
     }
 
     public function signIn(Customer $customer): void

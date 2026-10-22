@@ -75,6 +75,12 @@ class BookingForm
                         ->reorderable(false),
                 ])
                 ->hiddenOn('edit'),
+            Select::make('contact_pilgrim_id')->label('Contact for this booking')->native(false)
+                ->placeholder(fn (?Booking $record): string => 'The family\'s contact'.($record?->customer->contactPerson() ? ' ('.$record->customer->contactName().')' : ''))
+                ->options(fn (?Booking $record): array => $record?->customer->pilgrims()->get()->mapWithKeys(fn (Pilgrim $p): array => [$p->id => $p->name_en.($p->phone ? ' · '.$p->phone : '')])->all() ?? [])
+                ->helperText('Only when someone other than the family\'s contact is in charge of this trip.')
+                ->visibleOn('edit')
+                ->columnSpanFull(),
             Textarea::make('notes')->rows(3)->columnSpanFull()
                 ->placeholder('Anything the office should know: wheelchair, prefers a lower floor, paying in two parts'),
         ]);

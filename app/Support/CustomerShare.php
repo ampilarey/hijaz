@@ -14,10 +14,10 @@ final class CustomerShare
     /** @return array{message: string, whatsapp: string, viber: string, telegram: string} */
     public static function for(Booking $booking, string $url): array
     {
-        $booking->loadMissing(['customer', 'trip']);
+        $booking->loadMissing(['customer.contact', 'customer.head', 'contact', 'trip']);
         $company = (string) Settings::get(Settings::COMPANY_NAME);
-        $message = "Assalaamu alaikum {$booking->customer->name}. Your {$company} booking {$booking->reference} for {$booking->trip->name}: see the balance, sign the agreement and download your travel letters here: {$url}";
-        $phone = ltrim((string) Phone::normalise($booking->customer->phone), '+');
+        $message = "Assalaamu alaikum {$booking->contactName()}. Your {$company} booking {$booking->reference} for {$booking->trip->name}: see the balance, sign the agreement and download your travel letters here: {$url}";
+        $phone = ltrim((string) Phone::normalise($booking->contactPhone()), '+');
 
         return [
             'message' => $message,

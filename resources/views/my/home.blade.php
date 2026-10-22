@@ -120,7 +120,7 @@
     @if ($customer)
         <section class="mb-4 rounded-xl border border-brand-sky bg-white px-4 py-4">
             <h2 class="font-semibold">{{ $customer->portal_password_set_at ? 'Change your password' : 'Set a password' }}</h2>
-            <p class="mt-1 text-sm text-brand-muted">{{ $customer->portal_password_set_at ? 'You sign in with '.$customer->phone.' and your password.' : 'Then you can sign in any time at '.str(route('my.locked'))->after('://').' with '.($customer->phone ?: 'your mobile number').', without a new link.' }}</p>
+            <p class="mt-1 text-sm text-brand-muted">{{ $customer->portal_password_set_at ? 'You sign in with '.$customer->contactPhone().' and your password.' : 'Then you can sign in any time at '.str(route('my.locked'))->after('://').' with '.($customer->contactPhone() ?: 'your mobile number').', without a new link.' }}</p>
             <form method="post" action="{{ route('my.password') }}" class="mt-3 grid gap-2">
                 @csrf
                 <input name="password" type="password" autocomplete="new-password" minlength="8" required placeholder="New password, at least 8 characters" class="min-h-11 w-full rounded-lg border border-brand-sky px-3 text-base">

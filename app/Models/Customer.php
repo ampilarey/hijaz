@@ -56,7 +56,7 @@ class Customer extends Model
     }
 
     /** @var list<string> */
-    protected $fillable = ['type', 'name', 'head_pilgrim_id', 'phone', 'phone_alt', 'email', 'address', 'island_id', 'source', 'notes', 'created_by'];
+    protected $fillable = ['type', 'name', 'head_pilgrim_id', 'contact_pilgrim_id', 'phone', 'phone_alt', 'email', 'address', 'island_id', 'source', 'notes', 'created_by'];
 
     /** @var array<string, mixed> */
     protected $attributes = ['type' => self::INDIVIDUAL];
@@ -82,6 +82,30 @@ class Customer extends Model
     public function head(): BelongsTo
     {
         return $this->belongsTo(Pilgrim::class, 'head_pilgrim_id');
+    }
+
+    /** @return BelongsTo<Pilgrim, $this> The member who leads the family and deals with the office. */
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Pilgrim::class, 'contact_pilgrim_id');
+    }
+
+    /** The leader and contact: the one named, else the head of family. */
+    public function contactPerson(): ?Pilgrim
+    {
+        return $this->contact ?? $this->head;
+    }
+
+    /** Who to address: the contact person's name, else the family's. */
+    public function contactName(): string
+    {
+        return $this->contactPerson()?->name_en ?? $this->name;
+    }
+
+    /** The number to message: the contact person's own mobile, else the family's phone. */
+    public function contactPhone(): ?string
+    {
+        return filled($this->contactPerson()?->phone) ? $this->contactPerson()->phone : $this->phone;
     }
 
     /** @return BelongsTo<Island, $this> */

@@ -80,7 +80,7 @@ class MyController extends Controller
             return redirect()->route('my.locked');
         }
 
-        if (blank($customer->phone)) {
+        if (blank($customer->contactPhone())) {
             return back()->with('problem', 'The office has no mobile number for you, so a password cannot be set. Call the office.');
         }
 
@@ -93,7 +93,7 @@ class MyController extends Controller
             AuditContext::reset();
         }
 
-        return back()->with('done', 'Password set. Next time, sign in with '.$customer->phone.' and this password.');
+        return back()->with('done', 'Password set. Next time, sign in with '.$customer->contactPhone().' and this password.');
     }
 
     public function choose(Request $request): RedirectResponse

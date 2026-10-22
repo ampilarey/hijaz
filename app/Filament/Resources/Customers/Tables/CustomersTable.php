@@ -13,9 +13,10 @@ class CustomersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['contact', 'head']))
             ->columns([
                 TextColumn::make('name')->searchable()
-                    ->description(fn (Customer $record): string => $record->typeLabel().($record->phone ? ' · '.$record->phone : '')),
+                    ->description(fn (Customer $record): string => $record->typeLabel().' · '.$record->contactName().(($phone = $record->contactPhone()) ? ' · '.$phone : '')),
                 TextColumn::make('pilgrims_count')->label('People')->counts('pilgrims')->alignCenter(),
                 TextColumn::make('island.label')->label('Island')->visibleFrom('md'),
             ])

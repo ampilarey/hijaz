@@ -39,8 +39,12 @@ final class BookingDesk
 
             $this->seats->hold($trip, count($party), $booking);
 
-            foreach ($party as $i => $member) {
-                $this->addPilgrim($booking, Pilgrim::query()->findOrFail($member['pilgrim_id']), $member['occupancy'], isLead: $i === 0, resizeHold: false);
+            // The family's leader is the booking's lead when they travel; otherwise the first named.
+            $contactId = $customer->contactPerson()?->getKey();
+            $leadId = collect($party)->contains('pilgrim_id', $contactId) ? $contactId : $party[0]['pilgrim_id'];
+
+            foreach ($party as $member) {
+                $this->addPilgrim($booking, Pilgrim::query()->findOrFail($member['pilgrim_id']), $member['occupancy'], isLead: (int) $member['pilgrim_id'] === (int) $leadId, resizeHold: false);
             }
 
             $booking->forceFill(['seats' => count($party)])->save();

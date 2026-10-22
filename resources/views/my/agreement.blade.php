@@ -16,7 +16,7 @@
             <form method="post" action="{{ route('my.agreement.sign') }}" class="mt-3 grid gap-3" data-signature-form>
                 @csrf
                 <label class="grid gap-1 text-sm font-medium">Your full name
-                    <input name="name" required maxlength="160" value="{{ old('name', $booking->customer->head?->name_en ?? $booking->customer->name) }}" class="min-h-11 w-full rounded-lg border border-brand-sky px-3 text-base font-normal">
+                    <input name="name" required maxlength="160" value="{{ old('name', $booking->contactName()) }}" class="min-h-11 w-full rounded-lg border border-brand-sky px-3 text-base font-normal">
                 </label>
                 <div class="grid gap-1">
                     <span class="text-sm font-medium">Your signature</span>

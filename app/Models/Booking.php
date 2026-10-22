@@ -64,7 +64,7 @@ class Booking extends Model implements TakesPayments
     ];
 
     /** @var list<string> */
-    protected $fillable = ['trip_id', 'customer_id', 'notes', 'created_by'];
+    protected $fillable = ['trip_id', 'customer_id', 'contact_pilgrim_id', 'notes', 'created_by'];
 
     /** @var array<string, mixed> */
     protected $attributes = ['status' => self::DRAFT, 'seats' => 0];
@@ -125,6 +125,28 @@ class Booking extends Model implements TakesPayments
     public function schedule(): HasMany
     {
         return $this->hasMany(PaymentSchedule::class)->orderBy('due_on');
+    }
+
+    /** @return BelongsTo<Pilgrim, $this> A contact for this booking alone; usually empty, and the family's contact is used. */
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Pilgrim::class, 'contact_pilgrim_id');
+    }
+
+    /** Who deals with the office for this booking. */
+    public function contactPerson(): ?Pilgrim
+    {
+        return $this->contact ?? $this->customer->contactPerson();
+    }
+
+    public function contactName(): string
+    {
+        return $this->contactPerson()?->name_en ?? $this->customer->name;
+    }
+
+    public function contactPhone(): ?string
+    {
+        return filled($this->contact?->phone) ? $this->contact->phone : $this->customer->contactPhone();
     }
 
     /** @return MorphMany<Document, $this> Signed agreement scans. */

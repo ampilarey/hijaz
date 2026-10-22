@@ -3,6 +3,7 @@
 namespace Tests\Feature\Ground;
 
 use App\Filament\Resources\Bookings\Pages\ViewBooking;
+use App\Filament\Resources\Customers\Pages\EditCustomer;
 use App\Models\Agreement;
 use App\Models\Booking;
 use App\Models\Document;
@@ -12,6 +13,7 @@ use App\Services\Bookings\BookingDesk;
 use App\Services\SelfService\Gatekeeper;
 use App\Support\Access;
 use App\Support\CustomerShare;
+use App\Support\Phone;
 use App\Support\Settings;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -157,13 +159,52 @@ class CustomerPortalTest extends TestCase
     {
         $booking = $this->booking();
         $share = CustomerShare::for($booking, 'https://example.test/my/enter/abc');
+        $headPhone = ltrim((string) \App\Support\Phone::normalise($booking->customer->head->phone), '+');
 
-        $this->assertStringStartsWith('https://wa.me/9607771234?text=', $share['whatsapp']);
+        // With no leader named, the head of family is the contact, on their own mobile.
+        $this->assertStringStartsWith('https://wa.me/'.$headPhone.'?text=', $share['whatsapp']);
         $this->assertStringContainsString(rawurlencode($booking->reference), $share['whatsapp']);
         $this->assertStringStartsWith('viber://forward?text=', $share['viber']);
         $this->assertStringStartsWith('https://t.me/share/url?url='.rawurlencode('https://example.test/my/enter/abc'), $share['telegram']);
 
         $this->actingAs(User::factory()->create()->assignRole(Access::REGISTRATION));
         Livewire::test(ViewBooking::class, ['record' => $booking->getKey()])->callAction('share')->assertNotified('Link made: send it');
+    }
+
+    public function test_the_family_leader_is_the_contact_for_messages_sign_in_the_agreement_and_the_lead(): void
+    {
+        $trip = PricedTrip::make();
+        [$customer, $head, $son] = PricedTrip::family();
+        $customer->forceFill(['phone' => '7770000'])->save();
+        $son->forceFill(['phone' => '9605551'])->save();
+
+        $this->actingAs(User::factory()->create()->assignRole(Access::REGISTRATION));
+        Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
+            ->fillForm(['contact_pilgrim_id' => $son->id])
+            ->call('save')
+            ->assertHasNoFormErrors();
+        $customer->refresh();
+        $this->assertSame($son->id, $customer->contact_pilgrim_id);
+        $this->assertSame('+9609605551', Phone::normalise($customer->contactPhone()));
+
+        $booking = app(BookingDesk::class)->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD], ['pilgrim_id' => $son->id, 'occupancy' => PriceTier::QUAD]]);
+        $this->assertTrue($booking->pilgrims->firstWhere('pilgrim_id', $son->id)->is_lead);
+
+        $share = CustomerShare::for($booking, 'https://example.test/my/enter/abc');
+        $this->assertStringStartsWith('https://wa.me/9609605551?', $share['whatsapp']);
+        $this->assertStringContainsString($son->name_en, $share['message']);
+
+        // The contact's own mobile signs in, as does the family phone.
+        $customer->forceFill(['portal_password' => bcrypt('umrah2027')])->save();
+        auth()->logout();
+        $this->post(route('my.login'), ['phone' => '9605551', 'password' => 'umrah2027'])->assertRedirect(route('my.home'));
+        $this->get(route('my.agreement'))->assertSee('value="'.$son->name_en.'"', false);
+        $this->post(route('my.leave'));
+        $this->post(route('my.login'), ['phone' => '7770000', 'password' => 'umrah2027'])->assertRedirect(route('my.home'));
+
+        // One booking can name someone else in charge.
+        $booking->update(['contact_pilgrim_id' => $head->id]);
+        $this->assertSame($head->name_en, $booking->fresh()->contactName());
+        $this->assertSame($son->name_en, $customer->fresh()->contactName());
     }
 }
