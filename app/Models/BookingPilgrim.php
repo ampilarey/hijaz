@@ -40,7 +40,7 @@ class BookingPilgrim extends Model
     ];
 
     /** @var list<string> */
-    protected $fillable = ['booking_id', 'pilgrim_id', 'occupancy', 'pax_type', 'price_tier_id', 'amount_minor', 'currency', 'is_lead', 'ticket_number', 'seat_number', 'visa_status', 'visa_number', 'visa_agent', 'visa_submitted_on', 'visa_issued_on', 'bus_group_id'];
+    protected $fillable = ['booking_id', 'pilgrim_id', 'occupancy', 'pax_type', 'price_tier_id', 'amount_minor', 'currency', 'is_lead', 'ticket_number', 'seat_number', 'visa_status', 'visa_number', 'visa_agent', 'visa_submitted_on', 'visa_issued_on', 'bus_group_id', 'outbound_flight_id', 'return_flight_id'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -77,6 +77,52 @@ class BookingPilgrim extends Model
     }
 
     /** @return BelongsTo<BusGroup, $this> */
+    /** @return BelongsTo<TripFlight, $this> */
+    public function outboundFlight(): BelongsTo
+    {
+        return $this->belongsTo(TripFlight::class, 'outbound_flight_id');
+    }
+
+    /** @return BelongsTo<TripFlight, $this> */
+    public function returnFlight(): BelongsTo
+    {
+        return $this->belongsTo(TripFlight::class, 'return_flight_id');
+    }
+
+    /** The flight out: the one they were put on, or the trip's only outbound flight. */
+    public function flightOut(): ?TripFlight
+    {
+        return $this->outboundFlight ?? $this->booking->trip->onlyFlight(TripFlight::OUTBOUND);
+    }
+
+    /** The flight home, the same way. */
+    public function flightBack(): ?TripFlight
+    {
+        return $this->returnFlight ?? $this->booking->trip->onlyFlight(TripFlight::RETURN);
+    }
+
+    /** When this traveller leaves: their own flight's day, else the trip's departure date. */
+    public function departsOn(): ?Carbon
+    {
+        return $this->flightOut()?->departs_at?->copy()->startOfDay() ?? $this->booking->trip->departs_on;
+    }
+
+    /** When this traveller is home: their own return flight's day, else the trip's return date. */
+    public function returnsOn(): ?Carbon
+    {
+        $back = $this->flightBack();
+
+        return ($back?->arrives_at ?? $back?->departs_at)?->copy()->startOfDay() ?? $this->booking->trip->returns_on;
+    }
+
+    /** "SV 789 · 30 Nov" out and back, or what is known. */
+    public function flightsLabel(): string
+    {
+        $part = fn (?TripFlight $f): string => $f ? trim($f->flight_number).' '.$f->departs_at->format('j M') : '—';
+
+        return $part($this->flightOut()).' / '.$part($this->flightBack());
+    }
+
     public function busGroup(): BelongsTo
     {
         return $this->belongsTo(BusGroup::class);

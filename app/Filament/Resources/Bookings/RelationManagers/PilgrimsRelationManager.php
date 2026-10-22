@@ -53,7 +53,7 @@ class PilgrimsRelationManager extends RelationManager
                         $record->is_lead ? 'lead' : null,
                         PriceTier::OCCUPANCIES[$record->occupancy] ?? $record->occupancy,
                         $record->pax_type !== PriceTier::ADULT ? $record->pax_type : null,
-                        $booking->trip->returns_on !== null && $record->pilgrim->passportOkFor($booking->trip->returns_on) === false ? 'passport expires too soon' : null,
+                        $record->returnsOn() !== null && $record->pilgrim->passportOkFor($record->returnsOn()) === false ? 'passport expires too soon' : null,
                     ]))),
                 TextColumn::make('amount_minor')->label('Fare')->alignEnd()->state(fn (BookingPilgrim $record): string => $record->money()->format()),
                 TextColumn::make('visa_status')->label('Visa')->badge()->state(fn (BookingPilgrim $record): string => BookingPilgrim::VISA_STATUSES[$record->visa_status] ?? $record->visa_status)

@@ -7,6 +7,7 @@ use App\Models\BookingPilgrim;
 use App\Models\Document;
 use App\Models\Trip;
 use App\Models\TripChecklistItem;
+use App\Models\TripFlight;
 use Illuminate\Support\Collection;
 
 /**
@@ -35,6 +36,8 @@ final class Readiness
             $this->passports($trip, $travellers),
             $this->identity($travellers),
             $this->visas($travellers),
+            $this->dates($trip),
+            $this->flights($trip, $travellers),
             $this->tickets($trip, $travellers),
             $this->money($trip),
             $this->buses($trip, $travellers),
@@ -65,7 +68,7 @@ final class Readiness
     {
         return BookingPilgrim::query()
             ->whereIn('booking_id', Booking::query()->where('trip_id', $trip->getKey())->where('status', Booking::CONFIRMED)->select('id'))
-            ->with(['pilgrim.documents', 'booking.customer', 'busGroup'])
+            ->with(['pilgrim.documents', 'booking.customer', 'booking.trip.flights', 'busGroup', 'outboundFlight', 'returnFlight'])
             ->get();
     }
 
@@ -118,8 +121,9 @@ final class Readiness
     /** @param  Collection<int, BookingPilgrim>  $travellers */
     private function passports(Trip $trip, Collection $travellers): array
     {
-        $short = $trip->returns_on === null ? collect() : $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($trip->returns_on) === false);
-        $unknown = $trip->returns_on === null ? collect() : $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($trip->returns_on) === null);
+        $dated = $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->returnsOn() !== null);
+        $short = $dated->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($bp->returnsOn()) === false);
+        $unknown = $dated->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($bp->returnsOn()) === null);
         $out = [];
 
         if ($short->isNotEmpty()) {
@@ -160,6 +164,45 @@ final class Readiness
 
         if ($late->isNotEmpty()) {
             $out[] = ['area' => 'visas', 'severity' => self::ATTENTION, 'headline' => $late->count() === 1 ? 'One visa is late back from the agent' : $late->count().' visas are late back from the agent', 'detail' => 'Submitted more than '.config('booking.visa_sla_days', 7).' days ago: '.$late->map(fn ($bp) => $bp->pilgrim->name_en)->implode(', ').'.', 'count' => $late->count(), 'url' => null];
+        }
+
+        return $out;
+    }
+
+    private function dates(Trip $trip): array
+    {
+        return $trip->hasDates() ? [] : [[
+            'area' => 'dates', 'severity' => self::BLOCKING,
+            'headline' => 'The trip\'s dates are not set',
+            'detail' => 'Add the flights, or type the departure and return dates on the trip page.',
+            'count' => 1, 'url' => null,
+        ]];
+    }
+
+    /**
+     * With more than one flight out or home, each traveller must be on one.
+     *
+     * @param  Collection<int, BookingPilgrim>  $travellers
+     */
+    private function flights(Trip $trip, Collection $travellers): array
+    {
+        $out = [];
+
+        foreach ([TripFlight::OUTBOUND => ['flightOut', 'out'], TripFlight::RETURN => ['flightBack', 'home']] as $direction => [$method, $word]) {
+            if ($trip->flights()->where('direction', $direction)->count() < 2) {
+                continue;
+            }
+
+            $none = $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->{$method}() === null);
+
+            if ($none->isNotEmpty()) {
+                $out[] = [
+                    'area' => 'flights', 'severity' => self::BLOCKING,
+                    'headline' => $none->count() === 1 ? "One traveller is on no flight {$word}" : $none->count()." travellers are on no flight {$word}",
+                    'detail' => $none->map(fn ($bp) => $bp->pilgrim->name_en)->implode(', ').'. Select them under Travellers and use Put on flights.',
+                    'count' => $none->count(), 'url' => null,
+                ];
+            }
         }
 
         return $out;

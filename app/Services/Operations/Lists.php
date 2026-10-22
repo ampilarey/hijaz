@@ -39,10 +39,10 @@ final class Lists
         $hotels = $trip->hotels()->orderBy('check_in_on')->get();
 
         $columns = match ($preset) {
-            'airline' => ['n' => '#', 'name' => 'Name as on passport', 'passport' => 'Passport no', 'nationality' => 'Nat.', 'dob' => 'Date of birth', 'gender' => 'Sex', 'expiry' => 'Expiry', 'ticket' => 'Ticket', 'seat' => 'Seat'],
+            'airline' => ['n' => '#', 'name' => 'Name as on passport', 'passport' => 'Passport no', 'nationality' => 'Nat.', 'dob' => 'Date of birth', 'gender' => 'Sex', 'expiry' => 'Expiry', 'flight' => 'Flight', 'ticket' => 'Ticket', 'seat' => 'Seat'],
             'hotel' => ['n' => '#', 'name' => 'Name', 'gender' => 'Sex', 'passport' => 'Passport no', 'nationality' => 'Nat.', ...$hotels->mapWithKeys(fn (TripHotel $h) => ['room_'.$h->id => $h->cityLabel().' room'])->all()],
             'ministry' => ['n' => '#', 'name' => 'Name', 'id_number' => 'ID number', 'passport' => 'Passport no', 'dob' => 'Date of birth', 'gender' => 'Sex', 'island' => 'Island', 'phone' => 'Phone'],
-            default => ['n' => '#', 'name' => 'Name', 'id_number' => 'ID no', 'passport' => 'Passport', 'expiry' => 'Expiry', 'dob' => 'DOB', 'gender' => 'Sex', 'phone' => 'Phone', 'family' => 'Family', 'booking' => 'Booking', 'bus' => 'Bus', ...$hotels->mapWithKeys(fn (TripHotel $h) => ['room_'.$h->id => $h->cityLabel()])->all(), 'visa' => 'Visa', 'ticket' => 'Ticket', 'paid' => 'Paid'],
+            default => ['n' => '#', 'name' => 'Name', 'id_number' => 'ID no', 'passport' => 'Passport', 'expiry' => 'Expiry', 'dob' => 'DOB', 'gender' => 'Sex', 'phone' => 'Phone', 'family' => 'Family', 'booking' => 'Booking', 'bus' => 'Bus', ...$hotels->mapWithKeys(fn (TripHotel $h) => ['room_'.$h->id => $h->cityLabel()])->all(), 'flight' => 'Flights', 'visa' => 'Visa', 'ticket' => 'Ticket', 'paid' => 'Paid'],
         };
 
         $rows = [];
@@ -231,7 +231,7 @@ final class Lists
     {
         return BookingPilgrim::query()
             ->whereIn('booking_id', Booking::query()->where('trip_id', $trip->getKey())->live()->select('id'))
-            ->with(['pilgrim.island', 'pilgrim.documents.versions', 'booking.customer', 'busGroup', 'roomAssignments.room'])
+            ->with(['pilgrim.island', 'pilgrim.documents.versions', 'booking.customer', 'booking.trip.flights', 'busGroup', 'roomAssignments.room', 'outboundFlight', 'returnFlight'])
             ->get()
             ->sortBy(fn (BookingPilgrim $bp) => ($bp->booking->status === Booking::CONFIRMED ? '0' : '1').$bp->booking->customer->name.' '.$bp->pilgrim->name_en)
             ->values();
@@ -261,6 +261,7 @@ final class Lists
             'booking' => $b->reference,
             'bus' => $bp->busGroup?->name ?? '',
             'visa' => $bp->visaLabel(),
+            'flight' => $bp->flightsLabel(),
             'ticket' => (string) $bp->ticket_number,
             'seat' => (string) $bp->seat_number,
             'paid' => $b->isPaidUp() && $b->currencies() !== [] ? 'paid' : $b->balanceSummary(),

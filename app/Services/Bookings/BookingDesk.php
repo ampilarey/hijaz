@@ -33,11 +33,6 @@ final class BookingDesk
             throw new \InvalidArgumentException('A booking needs at least one pilgrim.');
         }
 
-        // Fares depend on each pilgrim's age on the departure day, so there is no booking without one.
-        if (! $trip->hasDates()) {
-            throw new \InvalidArgumentException('Set the trip\'s dates before booking anyone on it.');
-        }
-
         return DB::transaction(function () use ($trip, $customer, $party, $notes): Booking {
             $booking = Booking::query()->create(['trip_id' => $trip->getKey(), 'customer_id' => $customer->getKey(), 'notes' => $notes]);
             $booking->forceFill(['trip_snapshot' => $this->snapshot($trip)])->save();
@@ -74,7 +69,8 @@ final class BookingDesk
             }
 
             $trip = $booking->trip;
-            $paxType = $pilgrim->paxTypeOn($trip->departs_on);
+            // Age is taken on the departure day; before the dates are known, on today.
+            $paxType = $pilgrim->paxTypeOn($trip->departs_on ?? today());
             $tier = $this->tierFor($trip, $occupancy, $paxType);
 
             $bp = $booking->pilgrims()->create([
@@ -237,7 +233,7 @@ final class BookingDesk
     {
         return [
             'version' => 1,
-            'trip' => ['code' => $trip->code, 'name' => $trip->name, 'departs_on' => $trip->departs_on->toDateString(), 'returns_on' => $trip->returns_on->toDateString()],
+            'trip' => ['code' => $trip->code, 'name' => $trip->name, 'departs_on' => $trip->departs_on?->toDateString(), 'returns_on' => $trip->returns_on?->toDateString()],
             'prices' => $trip->priceTiers->map(fn (PriceTier $t): array => $t->only(['occupancy', 'pax_type', 'amount_minor', 'currency']))->all(),
             'hotels' => $trip->hotels->map(fn ($h): array => $h->only(['city', 'name', 'check_in_on', 'check_out_on']))->all(),
         ];

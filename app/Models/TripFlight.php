@@ -44,6 +44,18 @@ class TripFlight extends Model
         return ['departs_at' => 'datetime', 'arrives_at' => 'datetime', 'seats' => 'integer'];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(fn (TripFlight $flight) => $flight->trip->syncDatesFromFlights());
+        static::deleted(fn (TripFlight $flight) => $flight->trip?->syncDatesFromFlights());
+    }
+
+    /** "SV 789 MLE → JED · 30 Nov 23:40", for a picker. */
+    public function describe(): string
+    {
+        return $this->label().' · '.$this->departs_at->format('j M H:i');
+    }
+
     /** @return BelongsTo<Trip, $this> */
     public function trip(): BelongsTo
     {

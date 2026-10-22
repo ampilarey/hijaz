@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Trips\Schemas;
 
 use App\Models\Trip;
+use App\Models\TripFlight;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -20,9 +21,12 @@ class TripForm
         return $schema->components([
             Section::make()->columns(2)->schema([
                 TextInput::make('name')->required()->maxLength(120)->placeholder('July 2027 Umrah')->columnSpanFull(),
-                DatePicker::make('departs_on')->label('Departs')->native(false)->required(fn (?Trip $record): bool => self::needsDates($record))->displayFormat('j M Y')->live()
-                    ->helperText('Leave empty until the dates are fixed. The trip opens for registration once both are set.'),
-                DatePicker::make('returns_on')->label('Returns')->native(false)->required(fn (?Trip $record): bool => self::needsDates($record))->displayFormat('j M Y')
+                DatePicker::make('departs_on')->label('Departs')->native(false)->displayFormat('j M Y')->live()
+                    ->disabled(fn (?Trip $record): bool => self::fromFlights($record, TripFlight::OUTBOUND))
+                    ->helperText(fn (?Trip $record): string => self::fromFlights($record, TripFlight::OUTBOUND) ? 'Taken from the first flight out.' : 'Optional. Leave empty until it is fixed; adding the flights fills it in.'),
+                DatePicker::make('returns_on')->label('Returns')->native(false)->displayFormat('j M Y')
+                    ->disabled(fn (?Trip $record): bool => self::fromFlights($record, TripFlight::RETURN))
+                    ->helperText(fn (?Trip $record): ?string => self::fromFlights($record, TripFlight::RETURN) ? 'Taken from the last flight home.' : null)
                     ->rule(fn (Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
                         if (filled($value) && filled($get('departs_on')) && Carbon::parse($value)->lt(Carbon::parse($get('departs_on')))) {
                             $fail('The return date cannot be before the departure date.');
@@ -41,9 +45,9 @@ class TripForm
         ]);
     }
 
-    /** Only a draft with no bookings may be without dates. */
-    private static function needsDates(?Trip $trip): bool
+    /** Once a flight in that direction is entered, the date comes from the flights. */
+    private static function fromFlights(?Trip $trip, string $direction): bool
     {
-        return $trip !== null && ($trip->status !== Trip::DRAFT || $trip->hasBookings());
+        return $trip !== null && $trip->flights()->where('direction', $direction)->exists();
     }
 }

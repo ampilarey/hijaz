@@ -108,10 +108,6 @@ class Trip extends Model
 
         // A trip made before its dates were known takes its real code once it has a departure date.
         static::updating(function (Trip $trip): void {
-            if (! $trip->hasDates() && ($trip->hasBookings() || ! in_array($trip->status, [self::DRAFT, self::CANCELLED], true))) {
-                throw new \DomainException('A trip that is open or has bookings must keep both its dates.');
-            }
-
             if (str_starts_with((string) $trip->code, self::UNDATED_CODE) && $trip->departs_on !== null) {
                 $trip->code = static::nextCode($trip->departs_on);
             }
@@ -263,7 +259,7 @@ class Trip extends Model
             throw IllegalTripTransition::from($this->status, $status);
         }
 
-        if (! $this->hasDates() && $status !== self::CANCELLED) {
+        if (! $this->hasDates() && in_array($status, [self::TRAVELLING, self::COMPLETED], true)) {
             throw IllegalTripTransition::becauseDatesAreUnset();
         }
 
@@ -307,7 +303,40 @@ class Trip extends Model
         return $this->hasDates() ? max(0, (int) $this->departs_on->diffInDays($this->returns_on)) : 0;
     }
 
-    /** Both dates set. A trip without them stays a draft and takes no booking. */
+    /** The one flight in a direction, when there is exactly one; with several, each traveller is put on theirs. */
+    public function onlyFlight(string $direction): ?TripFlight
+    {
+        $flights = $this->flights->where('direction', $direction);
+
+        return $flights->count() === 1 ? $flights->first() : null;
+    }
+
+    /**
+     * Once flights are entered they decide the dates: the first flight out
+     * and the last one home. A direction with no flight keeps what was typed.
+     */
+    public function syncDatesFromFlights(): void
+    {
+        $flights = $this->flights()->get();
+        $out = $flights->where('direction', TripFlight::OUTBOUND);
+        $back = $flights->where('direction', TripFlight::RETURN);
+
+        if ($out->isNotEmpty()) {
+            $this->departs_on = $out->min('departs_at')->copy()->startOfDay();
+        }
+
+        if ($back->isNotEmpty()) {
+            $this->returns_on = $back->map(fn (TripFlight $f) => $f->arrives_at ?? $f->departs_at)->max()->copy()->startOfDay();
+        }
+
+        if ($this->isDirty(['departs_on', 'returns_on'])) {
+            $this->save();
+        }
+
+        $this->unsetRelation('flights');
+    }
+
+    /** Both dates set. They may come later, from the flights; a trip cannot travel without them. */
     public function hasDates(): bool
     {
         return $this->departs_on !== null && $this->returns_on !== null;

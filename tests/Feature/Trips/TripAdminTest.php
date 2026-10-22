@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Trips;
 
+use App\Exceptions\IllegalTripTransition;
 use App\Filament\Resources\Trips\Pages\CreateTrip;
 use App\Filament\Resources\Trips\Pages\EditTrip;
 use App\Filament\Resources\Trips\RelationManagers\ChecklistRelationManager;
@@ -9,11 +10,13 @@ use App\Filament\Resources\Trips\RelationManagers\CostsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\ExcursionsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\FlightsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\PriceTiersRelationManager;
+use App\Filament\Resources\Trips\RelationManagers\TravellersRelationManager;
 use App\Filament\Resources\Trips\TripResource;
 use App\Models\PriceTier;
 use App\Models\Trip;
 use App\Models\User;
 use App\Services\Bookings\BookingDesk;
+use App\Services\Operations\Readiness;
 use App\Services\Telegram\Bot;
 use App\Services\Telegram\Linker;
 use App\Support\Access;
@@ -221,7 +224,7 @@ class TripAdminTest extends TestCase
         $this->assertTrue($this->staff(Access::OPERATIONS)->can('delete', $trip));
     }
 
-    public function test_a_trip_can_be_saved_before_its_dates_are_fixed_and_opens_only_once_they_are(): void
+    public function test_a_trip_without_dates_opens_and_takes_bookings_and_cannot_travel_until_dated(): void
     {
         $this->actingAs($this->staff(Access::OPERATIONS));
 
@@ -236,25 +239,49 @@ class TripAdminTest extends TestCase
         $this->assertSame('Hajj 2027 (dates not set)', $trip->label);
 
         Livewire::test(EditTrip::class, ['record' => $trip->getRouteKey()])->callAction('to_open');
-        $this->assertSame(Trip::DRAFT, $trip->fresh()->status);
-
-        $trip->update(['departs_on' => '2027-05-20', 'returns_on' => '2027-06-10']);
-        $this->assertSame('UMR-2027-05', $trip->fresh()->code);
-
-        Livewire::test(EditTrip::class, ['record' => $trip->getRouteKey()])->callAction('to_open');
         $this->assertSame(Trip::OPEN, $trip->fresh()->status);
 
-        $this->expectException(\DomainException::class);
-        $trip->fresh()->update(['departs_on' => null]);
+        $trip->priceTiers()->create(['occupancy' => PriceTier::QUAD, 'pax_type' => PriceTier::ADULT, 'amount_minor' => 2850000, 'currency' => 'MVR']);
+        [$customer, $head] = PricedTrip::family();
+        $booking = app(BookingDesk::class)->open($trip->fresh(), $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD]]);
+        $this->assertSame('MVR 28,500', $booking->total('MVR')->format());
+
+        $trip->fresh()->transitionTo(Trip::CLOSED);
+        $this->expectException(IllegalTripTransition::class);
+        $trip->fresh()->transitionTo(Trip::TRAVELLING, 'test');
     }
 
-    public function test_nobody_is_booked_on_a_trip_without_dates(): void
+    public function test_flights_set_the_trip_dates_and_each_traveller_flies_on_their_own(): void
     {
-        $trip = Trip::factory()->create(['departs_on' => null, 'returns_on' => null]);
-        [$customer, $head] = PricedTrip::family();
+        $trip = PricedTrip::make();
+        $trip->update(['departs_on' => null, 'returns_on' => null]);
+        $first = $trip->flights()->create(['direction' => 'outbound', 'airline' => 'Saudia', 'flight_number' => 'SV 789', 'from_airport' => 'MLE', 'to_airport' => 'JED', 'departs_at' => '2027-05-20 23:40']);
+        $second = $trip->flights()->create(['direction' => 'outbound', 'airline' => 'Saudia', 'flight_number' => 'SV 791', 'from_airport' => 'MLE', 'to_airport' => 'JED', 'departs_at' => '2027-05-22 23:40']);
+        $trip->flights()->create(['direction' => 'return', 'airline' => 'Saudia', 'flight_number' => 'SV 788', 'from_airport' => 'MED', 'to_airport' => 'MLE', 'departs_at' => '2027-06-09 14:10', 'arrives_at' => '2027-06-10 01:00']);
 
-        $this->expectException(\InvalidArgumentException::class);
-        app(BookingDesk::class)->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD]]);
+        $trip->refresh();
+        $this->assertSame('2027-05-20', $trip->departs_on->toDateString());
+        $this->assertSame('2027-06-10', $trip->returns_on->toDateString());
+
+        [$customer, $head, $spouse] = PricedTrip::family();
+        $booking = app(BookingDesk::class)->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD], ['pilgrim_id' => $spouse->id, 'occupancy' => PriceTier::QUAD]]);
+        app(BookingDesk::class)->confirm($booking);
+        [$a, $b] = $booking->fresh()->pilgrims->all();
+
+        $this->assertContains('2 travellers are on no flight out', app(Readiness::class)->blockers($trip->fresh()));
+        $this->assertNotContains('2 travellers are on no flight home', app(Readiness::class)->blockers($trip->fresh()));
+
+        $this->actingAs($this->staff(Access::OPERATIONS));
+        Livewire::test(TravellersRelationManager::class, ['ownerRecord' => $trip, 'pageClass' => EditTrip::class])
+            ->callTableBulkAction('flights', [$a->id], data: ['outbound_flight_id' => $second->id]);
+
+        $this->assertSame('2027-05-22', $a->fresh()->departsOn()->toDateString());
+        $this->assertSame('2027-06-10', $a->fresh()->returnsOn()->toDateString());
+        $this->assertNull($b->fresh()->flightOut());
+        $this->assertContains('One traveller is on no flight out', app(Readiness::class)->blockers($trip->fresh()));
+
+        $first->delete();
+        $this->assertSame('2027-05-22', $trip->fresh()->departs_on->toDateString());
     }
 
     public function test_a_cancellation_needs_a_reason(): void

@@ -32,7 +32,7 @@ class BookingForm
                 ->columns(2)
                 ->schema([
                     Select::make('trip_id')->label('Trip')->required()->native(false)->live()
-                        ->options(fn (): array => TripOptions::all(liveOnly: true, datedOnly: true))
+                        ->options(fn (): array => TripOptions::all(liveOnly: true))
                         ->helperText(function (Get $get): ?string {
                             $trip = filled($get('trip_id')) ? Trip::query()->find($get('trip_id')) : null;
 
@@ -97,7 +97,7 @@ class BookingForm
             return '—';
         }
 
-        $paxType = $pilgrim->paxTypeOn($trip->departs_on);
+        $paxType = $pilgrim->paxTypeOn($trip->departs_on ?? today());
         $tier = app(BookingDesk::class)->tierFor($trip, $occupancy, $paxType);
 
         return $tier ? Money::ofMinor($tier->amount_minor, $tier->currency)->format().' ('.$paxType.')' : 'no price for that room';
