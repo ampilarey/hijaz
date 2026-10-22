@@ -26,6 +26,9 @@ class BookingInfolist
                         ->helperText(fn (Booking $record): string => $record->trip->code.' · '.$record->trip->datesLabel()),
                     TextEntry::make('customer.name')->label('Customer')->url(fn (Booking $record): string => CustomerResource::getUrl('edit', ['record' => $record->customer]))
                         ->helperText(fn (Booking $record): ?string => $record->customer->phone),
+                    TextEntry::make('agreement')->label('Agreement')
+                        ->state(fn (Booking $record): string => $record->agreement?->statusLabel() ?? 'Not signed yet')
+                        ->color(fn (Booking $record): string => $record->agreement?->isSigned() ? 'success' : 'warning'),
                     TextEntry::make('seats')->label('Seats')
                         ->helperText(function (Booking $record): ?string {
                             if ($record->status !== Booking::DRAFT) {

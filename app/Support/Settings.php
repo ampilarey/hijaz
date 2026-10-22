@@ -23,6 +23,9 @@ final class Settings
 
     public const PASSPORT_VALIDITY_MONTHS = 'documents.passport_validity_months';
 
+    /** The agreement a customer signs for each booking. {company}, {customer}, {booking} and {trip} are filled in. */
+    public const AGREEMENT_TERMS = 'documents.agreement_terms';
+
     private const CACHE_KEY = 'settings.all';
 
     /** @return array<string, mixed> */
@@ -35,8 +38,22 @@ final class Settings
             self::COMPANY_PHONES => implode(' / ', array_column((array) config('hijaz.phones'), 'display')),
             self::COMPANY_REGISTRATION => '',
             self::PASSPORT_VALIDITY_MONTHS => 6,
+            self::AGREEMENT_TERMS => self::DEFAULT_AGREEMENT,
         ];
     }
+
+    /** A starting point only: the office replaces it with its own agreement under Settings. */
+    public const DEFAULT_AGREEMENT = <<<'TXT'
+This agreement is between {company} and {customer} for booking {booking} on {trip}.
+
+1. {company} arranges the travel, accommodation and ground services described in the booking and its invoice.
+2. The customer pays the amounts on the invoice by the dates shown. A seat is held only while the booking is current.
+3. The customer gives true copies of each traveller's ID card, passport and photo, and a passport valid for the period the office states.
+4. Changes to flights, hotels or dates made by airlines, hotels or authorities are passed on to the customer as soon as they are known.
+5. Cancellations and refunds follow the terms the office gives in writing.
+
+By signing, the customer confirms they have read and accept these terms for everyone on the booking.
+TXT;
 
     public static function get(string $key): mixed
     {

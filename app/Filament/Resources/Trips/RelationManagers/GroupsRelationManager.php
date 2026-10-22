@@ -106,6 +106,10 @@ class GroupsRelationManager extends RelationManager
                     Action::make('airline')->label('Airline list')->icon('heroicon-o-document-text')->color('gray')
                         ->authorize($this->may('list.view'))
                         ->url(fn (TripGroup $record): string => route('lists.manifest', ['trip' => $trip, 'preset' => 'airline', 'group' => $record->getKey()]), shouldOpenInNewTab: true),
+                    Action::make('letters')->label('Travel letters')->icon('heroicon-o-envelope-open')->color('gray')
+                        ->authorize($this->may('list.view'))
+                        ->visible(fn (TripGroup $record): bool => $record->outbound_flight_id !== null && $record->members_count > 0)
+                        ->url(fn (TripGroup $record): string => route('trip-groups.letters', $record), shouldOpenInNewTab: true),
                     EditAction::make()->authorize($this->may('bus.update')),
                     DeleteAction::make()->authorize($this->may('bus.delete'))
                         ->modalDescription('The people and buses stay on the trip, out of any group.'),

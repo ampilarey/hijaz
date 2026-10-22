@@ -335,6 +335,24 @@ better; that is the owner's call because the image leaves the server.
   read, and waiting for staff. *Cancel customer links* on the booking turns
   the links off.
 
+## The customer portal (/my)
+
+- **Getting in.** On a booking, **Send to customer** makes a link and offers
+  WhatsApp, Viber and Telegram with the message written; the office's phone
+  sends it, nothing leaves the server. Inside, the customer sets a password
+  and from then on signs in at `/my` with their mobile number. One sign-in
+  shows all their bookings.
+- **Agreement.** The wording is under Settings › Documents, with
+  `{company}`, `{customer}`, `{booking}` and `{trip}` filled in. The
+  customer signs on screen (drawn signature, typed name, time and IP kept)
+  or uploads a signed paper copy; the office can upload one under
+  **Papers › Upload signed agreement**. A signed agreement keeps the
+  wording it was signed with.
+- **Travel letters.** One per traveller once the booking is confirmed and
+  their group has a flight out: in the portal, on the booking (**Papers**),
+  per traveller, and per group on the Groups tab. The layout is a working
+  one until the office's own sample replaces it.
+
 ## Settings in `.env`
 
 | Key | Meaning |

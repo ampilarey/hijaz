@@ -5,19 +5,25 @@ namespace App\Filament\Resources\Bookings\Pages;
 use App\Exceptions\IllegalBookingTransition;
 use App\Exceptions\NoSeatsAvailable;
 use App\Filament\Resources\Bookings\BookingResource;
+use App\Models\Agreement;
 use App\Models\Booking;
 use App\Models\Discount;
 use App\Services\Bookings\BookingDesk;
+use App\Services\Invoices\CustomerPapers;
+use App\Services\SelfService\Agreements;
 use App\Services\SelfService\Gatekeeper;
 use App\Support\Currency;
+use App\Support\CustomerShare;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ViewBooking extends ViewRecord
 {
@@ -74,20 +80,51 @@ class ViewBooking extends ViewRecord
                 ->url(fn (): string => route('bookings.invoice', $booking), shouldOpenInNewTab: true),
 
             Action::make('share')
-                ->label('Link for the customer')
-                ->icon('heroicon-o-link')
+                ->label('Send to customer')
+                ->icon('heroicon-o-paper-airplane')
                 ->color('gray')
                 ->visible(fn (): bool => $booking->isLive())
                 ->authorize(fn (): bool => (bool) auth()->user()?->can('selfService.issue'))
-                ->modalHeading('A link to their own booking page')
-                ->modalDescription('Paste it to the customer on WhatsApp or Viber. They see the trip, the balance, their copies, and can send slips and copies. It works for '.config('booking.self_service_days', 30).' days and is theirs alone; making a new one does not cancel the old.')
-                ->modalSubmitActionLabel('Make a link')
+                ->modalHeading('Send the customer their portal')
+                ->modalDescription('Makes a link to the customer portal, then offers WhatsApp, Viber or Telegram with a message ready to send. In the portal they see the booking and balance, sign the agreement, download their travel letters, send slips and copies, and set a password for next time. The link works for '.config('booking.self_service_days', 30).' days.')
+                ->modalSubmitActionLabel('Make the link')
                 ->action(function (Gatekeeper $gate) use ($booking): void {
                     $issued = $gate->issue($booking, auth()->user());
-                    Notification::make()->success()->title('Link made')->body($issued['url'])->persistent()
-                        ->actions([Action::make('copy')->label('Copy')->button()->extraAttributes(['x-on:click' => 'window.navigator.clipboard.writeText('.json_encode($issued['url']).')'])])
+                    $share = CustomerShare::for($booking, $issued['url']);
+                    Notification::make()->success()->title('Link made: send it')->body($issued['url'])->persistent()
+                        ->actions([
+                            Action::make('whatsapp')->label('WhatsApp')->button()->url($share['whatsapp'], shouldOpenInNewTab: true),
+                            Action::make('viber')->label('Viber')->button()->color('gray')->url($share['viber'], shouldOpenInNewTab: true),
+                            Action::make('telegram')->label('Telegram')->button()->color('gray')->url($share['telegram'], shouldOpenInNewTab: true),
+                            Action::make('copy')->label('Copy')->link()->extraAttributes(['x-on:click' => 'window.navigator.clipboard.writeText('.json_encode($share['message']).')']),
+                        ])
                         ->send();
                 }),
+            ActionGroup::make([
+                Action::make('agreement_pdf')
+                    ->label('Agreement (PDF)')
+                    ->icon('heroicon-o-document-check')
+                    ->url(fn (): string => route('bookings.agreement', $booking), shouldOpenInNewTab: true),
+                Action::make('agreement_scan')
+                    ->label('Upload signed agreement')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->visible(fn (): bool => ! ($booking->agreement?->isSigned() ?? false))
+                    ->authorize('update', $booking)
+                    ->schema([FileUpload::make('scan')->label('Signed copy (photo or PDF)')->required()
+                        ->acceptedFileTypes(config('documents.mime_types'))->maxSize((int) config('documents.max_kilobytes'))
+                        ->storeFiles(false)->extraInputAttributes(['capture' => 'environment'])])
+                    ->action(function (array $data, Agreements $agreements) use ($booking): void {
+                        /** @var TemporaryUploadedFile $scan */
+                        $scan = $data['scan'];
+                        $agreements->recordScan(Agreement::for($booking), (string) file_get_contents($scan->getRealPath()), $scan->getClientOriginalName(), (string) $scan->getMimeType(), auth()->user());
+                        Notification::make()->success()->title('Signed agreement kept with the booking')->send();
+                    }),
+                Action::make('letters')
+                    ->label('Travel letters (PDF)')
+                    ->icon('heroicon-o-envelope-open')
+                    ->visible(fn (): bool => $booking->pilgrims->contains(fn ($bp) => CustomerPapers::letterReady($bp)))
+                    ->url(fn (): string => route('bookings.letters', $booking), shouldOpenInNewTab: true),
+            ])->label('Papers')->icon('heroicon-o-document-text')->button()->color('gray'),
             ActionGroup::make([
                 Action::make('revoke_links')
                     ->label('Cancel customer links')

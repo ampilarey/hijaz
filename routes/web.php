@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomerPapersController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeaderController;
@@ -23,6 +24,10 @@ Route::middleware(['web', 'auth'])->group(function (): void {
     Route::get('/bookings/{booking}/invoice', [InvoiceController::class, 'invoice'])->name('bookings.invoice');
     Route::get('/excursion-bookings/{excursionBooking}/invoice', [InvoiceController::class, 'excursionInvoice'])->name('excursion-bookings.invoice');
     Route::get('/payments/{payment}/receipt', [InvoiceController::class, 'receipt'])->name('payments.receipt');
+    Route::get('/bookings/{booking}/agreement', [CustomerPapersController::class, 'agreement'])->name('bookings.agreement');
+    Route::get('/bookings/{booking}/letters', [CustomerPapersController::class, 'letters'])->name('bookings.letters');
+    Route::get('/booking-pilgrims/{bookingPilgrim}/letter', [CustomerPapersController::class, 'letter'])->name('booking-pilgrims.letter');
+    Route::get('/trip-groups/{tripGroup}/letters', [CustomerPapersController::class, 'groupLetters'])->name('trip-groups.letters');
 });
 
 // Lists, manifests, cards and tags: rendered on demand for staff who may see lists, and audited.
@@ -57,8 +62,15 @@ Route::middleware(['web', 'auth'])->prefix('ground')->name('ground.')->group(fun
 Route::middleware(['web', 'throttle:60,1'])->prefix('my')->name('my.')->group(function (): void {
     Route::get('/', [MyController::class, 'home'])->name('home');
     Route::get('/locked', [MyController::class, 'locked'])->name('locked');
+    Route::post('/login', [MyController::class, 'login'])->middleware('throttle:my-login')->name('login');
+    Route::post('/password', [MyController::class, 'password'])->middleware('throttle:my-login')->name('password');
+    Route::post('/choose', [MyController::class, 'choose'])->name('choose');
+    Route::get('/agreement', [MyController::class, 'agreement'])->name('agreement');
+    Route::post('/agreement', [MyController::class, 'sign'])->middleware('throttle:my-sign')->name('agreement.sign');
+    Route::get('/agreement/pdf', [MyController::class, 'agreementPdf'])->name('agreement.pdf');
+    Route::get('/letters/{bookingPilgrim?}', [MyController::class, 'letters'])->name('letters');
     Route::get('/enter/{token}', [MyController::class, 'enter'])->name('enter');
-    Route::post('/upload', [MyController::class, 'upload'])->middleware('throttle:20,1')->name('upload');
+    Route::post('/upload', [MyController::class, 'upload'])->middleware('throttle:my-upload')->name('upload');
     Route::get('/invoice', [MyController::class, 'invoice'])->name('invoice');
     Route::get('/receipts/{payment}', [MyController::class, 'receipt'])->name('receipt');
     Route::post('/leave', [MyController::class, 'leave'])->name('leave');

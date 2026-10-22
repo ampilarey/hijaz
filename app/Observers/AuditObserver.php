@@ -24,6 +24,8 @@ class AuditObserver
         'app_authentication_recovery_codes',
         'code_hash',
         'token_hash',
+        'portal_password',
+        'signature',
     ];
 
     /**

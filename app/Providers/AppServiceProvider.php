@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Account;
+use App\Models\Agreement;
 use App\Models\Booking;
 use App\Models\BookingLine;
 use App\Models\BookingPilgrim;
@@ -40,8 +41,11 @@ use App\Models\UsdAllocation;
 use App\Models\User;
 use App\Observers\AuditObserver;
 use App\Support\Access;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -60,6 +64,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // The customer portal's tighter limits each count on their own; Laravel's
+        // inline "throttle:10,1" would share one counter with the page limit,
+        // so a customer who had opened a few pages could not sign in.
+        foreach (['my-login' => 10, 'my-sign' => 10, 'my-upload' => 20] as $name => $perMinute) {
+            RateLimiter::for($name, fn (Request $request): Limit => Limit::perMinute($perMinute)->by($name.'|'.$request->ip()));
+        }
+
         // Admin may do everything, including verbs added by later phases
         // before anyone has thought about which role gets them.
         Gate::before(fn (User $user): ?bool => $user->hasRole(Access::ADMIN) ? true : null);
@@ -104,6 +115,7 @@ class AppServiceProvider extends ServiceProvider
         ExcursionParticipant::class,
         BusGroup::class,
         TripGroup::class,
+        Agreement::class,
         Room::class,
         RoomAssignment::class,
         Card::class,

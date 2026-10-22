@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -124,6 +125,18 @@ class Booking extends Model implements TakesPayments
     public function schedule(): HasMany
     {
         return $this->hasMany(PaymentSchedule::class)->orderBy('due_on');
+    }
+
+    /** @return MorphMany<Document, $this> Signed agreement scans. */
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
+    /** @return HasOne<Agreement, $this> */
+    public function agreement(): HasOne
+    {
+        return $this->hasOne(Agreement::class);
     }
 
     /** @return MorphMany<Payment, $this> */

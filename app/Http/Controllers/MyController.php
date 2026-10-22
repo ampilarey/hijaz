@@ -3,29 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Agreement;
 use App\Models\Booking;
 use App\Models\BookingPilgrim;
 use App\Models\Document;
 use App\Models\Payment;
 use App\Services\Documents\DocumentWallet;
 use App\Services\Documents\ReaderManager;
+use App\Services\Invoices\CustomerPapers;
 use App\Services\Invoices\Documents;
 use App\Services\Payments\SlipIntake;
+use App\Services\SelfService\Agreements;
 use App\Services\SelfService\Gatekeeper;
 use App\Support\AuditContext;
 use App\Support\Currency;
 use App\Support\Money;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 /**
- * The customer's own page at /my: their booking, what is paid and owed,
- * which copies are on file for each traveller, with uploads for the ones
- * missing and for bank slips. Reached by a one-time link; no password, no
- * identifier in any URL after the door. Everything they upload goes the
- * same way the office's uploads do, read and waiting for staff.
+ * The customer portal at /my: their booking, what is paid and owed, which
+ * copies are on file, the agreement to sign and the travel letters to
+ * download. The office's link lets a customer in; from inside they set a
+ * password and sign in after that with their mobile number. Everything
+ * they upload goes the same way the office's uploads do, read and waiting
+ * for staff.
  */
 class MyController extends Controller
 {
@@ -48,9 +53,114 @@ class MyController extends Controller
         return redirect()->route('my.home');
     }
 
-    public function locked(): View
+    public function locked(): View|RedirectResponse
     {
-        return view('my.locked');
+        return $this->gate->current() !== null ? redirect()->route('my.home') : view('my.locked');
+    }
+
+    public function login(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['phone' => ['required', 'string', 'max:30'], 'password' => ['required', 'string', 'max:200']]);
+        $customer = $this->gate->attempt($data['phone'], $data['password']);
+
+        if ($customer === null) {
+            return back()->withInput($request->only('phone'))->with('problem', 'That mobile number and password do not match. Use the link the office sent you to set a password first.');
+        }
+
+        $this->gate->signIn($customer);
+
+        return redirect()->route('my.home');
+    }
+
+    public function password(Request $request): RedirectResponse
+    {
+        $customer = $this->gate->customer();
+
+        if ($customer === null) {
+            return redirect()->route('my.locked');
+        }
+
+        if (blank($customer->phone)) {
+            return back()->with('problem', 'The office has no mobile number for you, so a password cannot be set. Call the office.');
+        }
+
+        $data = $request->validate(['password' => ['required', 'string', 'min:8', 'max:200', 'confirmed']]);
+        AuditContext::use(AuditContext::SELF);
+
+        try {
+            $this->gate->setPassword($customer, $data['password']);
+        } finally {
+            AuditContext::reset();
+        }
+
+        return back()->with('done', 'Password set. Next time, sign in with '.$customer->phone.' and this password.');
+    }
+
+    public function choose(Request $request): RedirectResponse
+    {
+        $booking = Booking::query()->find((int) $request->input('booking_id'));
+
+        return $booking !== null && $this->gate->choose($booking) ? redirect()->route('my.home') : abort(404);
+    }
+
+    public function agreement(): View|RedirectResponse
+    {
+        $booking = $this->gate->current();
+
+        if ($booking === null) {
+            return redirect()->route('my.locked');
+        }
+
+        $agreement = Agreement::for($booking);
+        $agreement->refreshWording();
+
+        return view('my.agreement', ['booking' => $booking->load(['customer', 'trip', 'pilgrims.pilgrim']), 'agreement' => $agreement->fresh()]);
+    }
+
+    public function sign(Request $request, Agreements $agreements): RedirectResponse
+    {
+        $booking = $this->gate->current();
+
+        if ($booking === null) {
+            return redirect()->route('my.locked');
+        }
+
+        $data = $request->validate(['name' => ['required', 'string', 'max:160'], 'signature' => ['required', 'string'], 'agree' => ['accepted']]);
+        AuditContext::use(AuditContext::SELF);
+
+        try {
+            $agreements->signOnScreen(Agreement::for($booking), $data['name'], $data['signature'], $request->ip(), $request->userAgent());
+        } catch (\InvalidArgumentException $e) {
+            return back()->withInput($request->only('name'))->with('problem', $e->getMessage());
+        } finally {
+            AuditContext::reset();
+        }
+
+        return redirect()->route('my.home')->with('done', 'Thank you. The agreement is signed; you can download a copy below.');
+    }
+
+    public function agreementPdf(CustomerPapers $papers): Response|RedirectResponse
+    {
+        $booking = $this->gate->current();
+
+        return $booking === null ? redirect()->route('my.locked') : $papers->agreement($booking)->stream($papers->agreementFilename($booking));
+    }
+
+    public function letters(CustomerPapers $papers, ?BookingPilgrim $bookingPilgrim = null): Response|RedirectResponse
+    {
+        $booking = $this->gate->current();
+
+        if ($booking === null) {
+            return redirect()->route('my.locked');
+        }
+
+        if ($bookingPilgrim !== null && $bookingPilgrim->booking_id !== $booking->getKey()) {
+            abort(404);
+        }
+
+        $travellers = $bookingPilgrim ? collect([$bookingPilgrim]) : $booking->pilgrims()->get();
+
+        return $papers->letters(new Collection($travellers->all()))->stream($papers->lettersFilename($booking, $bookingPilgrim));
     }
 
     public function home(): View|RedirectResponse
@@ -61,10 +171,15 @@ class MyController extends Controller
             return redirect()->route('my.locked')->with('problem', 'Open the link the office sent you to see your booking.');
         }
 
-        $booking->load(['trip.hotels', 'customer', 'pilgrims.pilgrim.documents.versions', 'schedule']);
+        $booking->load(['trip.hotels', 'trip.flights', 'customer', 'pilgrims.pilgrim.documents.versions', 'pilgrims.group.outboundFlight', 'pilgrims.group.returnFlight', 'pilgrims.outboundFlight', 'pilgrims.returnFlight', 'pilgrims.busGroup', 'schedule']);
+        $customer = $this->gate->customer();
 
         return view('my.home', [
             'booking' => $booking,
+            'customer' => $customer,
+            'signedIn' => $this->gate->signedInCustomer() !== null,
+            'bookings' => $this->gate->signedInCustomer() ? $this->gate->bookingsOf($customer) : collect(),
+            'agreement' => Agreement::for($booking),
             'payments' => $booking->payments()->whereIn('status', [Payment::SUCCEEDED, Payment::AWAITING_REVIEW, Payment::PENDING])->orderByDesc('id')->get(),
             'accounts' => Account::query()->where('show_on_invoices', true)->where('is_active', true)->orderBy('sort_order')->get(),
             'docs' => $booking->pilgrims->mapWithKeys(fn (BookingPilgrim $bp): array => [$bp->id => collect(Document::REQUIRED_FOR_PILGRIMS)->mapWithKeys(fn (string $t): array => [$t => match (true) {
@@ -86,7 +201,7 @@ class MyController extends Controller
         }
 
         $data = $request->validate([
-            'kind' => ['required', 'in:copy,slip'],
+            'kind' => ['required', 'in:copy,slip,agreement'],
             'file' => ['required', 'file', 'max:'.(int) config('documents.max_kilobytes'), 'mimetypes:'.implode(',', (array) config('documents.mime_types'))],
             'type' => ['required_if:kind,copy', 'nullable', 'in:'.implode(',', Document::REQUIRED_FOR_PILGRIMS)],
             'booking_pilgrim_id' => ['required_if:kind,copy', 'nullable', 'integer'],
@@ -99,6 +214,22 @@ class MyController extends Controller
         AuditContext::use(AuditContext::SELF);
 
         try {
+            if ($data['kind'] === 'agreement') {
+                $agreement = Agreement::for($booking);
+
+                if ($agreement->isSigned()) {
+                    return back()->with('problem', 'The agreement is already signed.');
+                }
+
+                if ($wallet->tooManyToday($booking, Document::AGREEMENT)) {
+                    return back()->with('problem', 'Too many uploads today. Try again tomorrow or call the office.');
+                }
+
+                app(Agreements::class)->recordScan($agreement, $bytes, $file->getClientOriginalName(), (string) $file->getMimeType());
+
+                return back()->with('done', 'Signed agreement received. Thank you.');
+            }
+
             if ($data['kind'] === 'copy') {
                 $bp = $booking->pilgrims()->whereKey($data['booking_pilgrim_id'])->with('pilgrim')->first();
 
@@ -152,9 +283,8 @@ class MyController extends Controller
 
     public function leave(): RedirectResponse
     {
-        session()->forget([Gatekeeper::SESSION_KEY, Gatekeeper::SESSION_KEY.'.access']);
-        session()->invalidate();
+        $this->gate->signOut();
 
-        return redirect()->route('my.locked')->with('done', 'You are signed out. Open the link again whenever you like.');
+        return redirect()->route('my.locked')->with('done', 'You are signed out.');
     }
 }

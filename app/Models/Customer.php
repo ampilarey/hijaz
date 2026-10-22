@@ -47,6 +47,15 @@ class Customer extends Model
     ];
 
     /** @var list<string> */
+    protected $hidden = ['portal_password'];
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return ['portal_password_set_at' => 'datetime', 'portal_last_login_at' => 'datetime'];
+    }
+
+    /** @var list<string> */
     protected $fillable = ['type', 'name', 'head_pilgrim_id', 'phone', 'phone_alt', 'email', 'address', 'island_id', 'source', 'notes', 'created_by'];
 
     /** @var array<string, mixed> */

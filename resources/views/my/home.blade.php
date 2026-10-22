@@ -1,5 +1,17 @@
 @extends('layouts.ground', ['title' => $booking->reference, 'heading' => $booking->trip->name, 'subheading' => $booking->reference.' · '.$booking->customer->name])
 @section('content')
+    @if ($bookings->count() > 1)
+        <form method="post" action="{{ route('my.choose') }}" class="mb-4 grid gap-2 rounded-xl border border-brand-sky bg-white px-4 py-3">
+            @csrf
+            <label class="grid gap-1 text-sm font-medium">Your bookings
+                <select name="booking_id" onchange="this.form.submit()" class="min-h-11 w-full rounded-lg border border-brand-sky px-3 text-base font-normal">
+                    @foreach ($bookings as $b)<option value="{{ $b->id }}" @selected($b->id === $booking->id)>{{ $b->reference }} · {{ $b->trip->name }}</option>@endforeach
+                </select>
+            </label>
+            <noscript><button class="min-h-11 rounded-lg border border-brand-sky px-4 text-sm font-medium">Show</button></noscript>
+        </form>
+    @endif
+
     <section class="mb-4 rounded-xl border border-brand-sky bg-white px-4 py-4">
         <p class="text-sm text-brand-muted">{{ $booking->trip->datesLabel('j F', 'j F Y') }} · {{ $booking->statusLabel() }}</p>
         @foreach ($booking->trip->hotels as $h)<p class="text-sm">{{ $h->cityLabel() }}: {{ $h->name }} ({{ $h->check_in_on->format('j M') }} – {{ $h->check_out_on->format('j M') }})</p>@endforeach
@@ -25,6 +37,33 @@
             <p class="mt-2 text-brand-muted">Write <strong>{{ $booking->reference }}</strong> in the remarks, then send the slip below.</p>
         </section>
     @endif
+
+    <section class="mb-4 rounded-xl border {{ $agreement->isSigned() ? 'border-brand-sky' : 'border-brand-green' }} bg-white px-4 py-4">
+        <h2 class="font-semibold">Agreement</h2>
+        <p class="mt-1 text-sm {{ $agreement->isSigned() ? 'text-brand-green-dark' : 'text-brand-muted' }}">{{ $agreement->isSigned() ? $agreement->statusLabel().'.' : 'Please read and sign the agreement for this booking: on this screen, or send a signed paper copy.' }}</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+            @unless ($agreement->isSigned())<a href="{{ route('my.agreement') }}" class="inline-flex min-h-11 items-center rounded-lg bg-brand-green-dark px-4 text-sm font-semibold text-white">Read and sign</a>@endunless
+            <a href="{{ route('my.agreement.pdf') }}" class="inline-flex min-h-11 items-center rounded-lg border border-brand-sky px-4 text-sm font-medium">{{ $agreement->isSigned() ? 'Download signed copy' : 'Download (PDF)' }}</a>
+        </div>
+    </section>
+
+    @php($ready = $booking->pilgrims->filter(fn ($bp) => \App\Services\Invoices\CustomerPapers::letterReady($bp)))
+    <section class="mb-4 rounded-xl border border-brand-sky bg-white px-4 py-4">
+        <h2 class="font-semibold">Travel letters</h2>
+        @if ($ready->isEmpty())
+            <p class="mt-1 text-sm text-brand-muted">Each traveller's travel acceptance letter appears here once the booking is confirmed and their flight is set.</p>
+        @else
+            <ul class="mt-2 divide-y divide-brand-sky text-sm">
+                @foreach ($ready as $bp)
+                    <li class="flex min-h-11 items-center justify-between gap-3 py-1">
+                        <span><span class="font-medium">{{ $bp->pilgrim->name_en }}</span><span class="block text-brand-muted">{{ $bp->flightsLabel() }}</span></span>
+                        <a href="{{ route('my.letters', $bp) }}" class="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-brand-sky px-4 font-medium">Letter</a>
+                    </li>
+                @endforeach
+            </ul>
+            @if ($ready->count() > 1)<a href="{{ route('my.letters') }}" class="mt-2 inline-flex min-h-11 items-center rounded-lg border border-brand-sky px-4 text-sm font-medium">All letters in one PDF</a>@endif
+        @endif
+    </section>
 
     <section class="mb-4 rounded-xl border border-brand-sky bg-white px-4 py-4">
         <h2 class="font-semibold">Send a bank slip</h2>
@@ -78,5 +117,18 @@
         </ul>
     </section>
 
-    <form method="post" action="{{ route('my.leave') }}">@csrf<button class="inline-flex min-h-11 items-center px-2 text-sm text-brand-muted underline">Sign out of this page</button></form>
+    @if ($customer)
+        <section class="mb-4 rounded-xl border border-brand-sky bg-white px-4 py-4">
+            <h2 class="font-semibold">{{ $customer->portal_password_set_at ? 'Change your password' : 'Set a password' }}</h2>
+            <p class="mt-1 text-sm text-brand-muted">{{ $customer->portal_password_set_at ? 'You sign in with '.$customer->phone.' and your password.' : 'Then you can sign in any time at '.str(route('my.locked'))->after('://').' with '.($customer->phone ?: 'your mobile number').', without a new link.' }}</p>
+            <form method="post" action="{{ route('my.password') }}" class="mt-3 grid gap-2">
+                @csrf
+                <input name="password" type="password" autocomplete="new-password" minlength="8" required placeholder="New password, at least 8 characters" class="min-h-11 w-full rounded-lg border border-brand-sky px-3 text-base">
+                <input name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required placeholder="The same again" class="min-h-11 w-full rounded-lg border border-brand-sky px-3 text-base">
+                <button class="min-h-11 rounded-lg border border-brand-sky px-4 font-medium">Save password</button>
+            </form>
+        </section>
+    @endif
+
+    <form method="post" action="{{ route('my.leave') }}">@csrf<button class="inline-flex min-h-11 items-center px-2 text-sm text-brand-muted underline">Sign out</button></form>
 @endsection

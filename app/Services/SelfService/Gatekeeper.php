@@ -3,14 +3,24 @@
 namespace App\Services\SelfService;
 
 use App\Models\Booking;
+use App\Models\Customer;
 use App\Models\PortalAccess;
 use App\Models\User;
+use App\Support\Phone;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/** Issues, finds and spends the links customers use to see their own booking. The token is stored hashed; the link is the only copy. */
+/**
+ * The door to the customer portal. The office's link lets a customer in
+ * once (the token is stored hashed; the link is the only copy); from inside
+ * they set a password and sign in after that with their mobile number.
+ */
 final class Gatekeeper
 {
     public const SESSION_KEY = 'my.booking_id';
+
+    public const CUSTOMER_KEY = 'my.customer_id';
 
     /** @return array{access: PortalAccess, url: string} */
     public function issue(Booking $booking, ?User $by = null): array
@@ -43,9 +53,20 @@ final class Gatekeeper
         session()->put(self::SESSION_KEY.'.access', $access->getKey());
     }
 
-    /** The booking of the current visitor, if their link is still good. */
+    /**
+     * The booking on screen: for a customer signed in with their password,
+     * the one they chose (or their latest); for a visitor from a link, that
+     * link's booking while the link is good.
+     */
     public function current(): ?Booking
     {
+        if (($customer = $this->signedInCustomer()) !== null) {
+            $chosen = session()->get(self::SESSION_KEY);
+            $bookings = $this->bookingsOf($customer);
+
+            return $bookings->firstWhere('id', $chosen) ?? $bookings->first();
+        }
+
         $accessId = session()->get(self::SESSION_KEY.'.access');
         $access = $accessId ? PortalAccess::query()->with('booking')->find($accessId) : null;
 
@@ -58,6 +79,73 @@ final class Gatekeeper
         $access->forceFill(['last_seen_at' => now()])->saveQuietly();
 
         return $access->booking;
+    }
+
+    /** Whoever is on the portal, by password or by link. */
+    public function customer(): ?Customer
+    {
+        return $this->signedInCustomer() ?? $this->current()?->customer;
+    }
+
+    public function signedInCustomer(): ?Customer
+    {
+        $id = session()->get(self::CUSTOMER_KEY);
+
+        return $id ? Customer::query()->find($id) : null;
+    }
+
+    /** @return Collection<int, Booking> newest first; cancelled bookings are left out. */
+    public function bookingsOf(Customer $customer): Collection
+    {
+        return $customer->bookings()->whereIn('status', [Booking::DRAFT, Booking::CONFIRMED, Booking::COMPLETED])->with('trip')->orderByDesc('id')->get();
+    }
+
+    /** Mobile number and password. Null when either is wrong; the message never says which. */
+    public function attempt(string $phone, string $password): ?Customer
+    {
+        $number = Phone::normalise($phone);
+
+        if ($number === null) {
+            return null;
+        }
+
+        return Customer::query()->whereNotNull('portal_password')->get()
+            ->first(fn (Customer $c): bool => Phone::normalise((string) $c->phone) === $number && Hash::check($password, (string) $c->portal_password));
+    }
+
+    public function signIn(Customer $customer): void
+    {
+        session()->regenerate();
+        session()->forget([self::SESSION_KEY, self::SESSION_KEY.'.access']);
+        session()->put(self::CUSTOMER_KEY, $customer->getKey());
+        $customer->forceFill(['portal_last_login_at' => now()])->saveQuietly();
+    }
+
+    /** Which booking to show, when the customer has more than one. Only their own. */
+    public function choose(Booking $booking): bool
+    {
+        $customer = $this->signedInCustomer();
+
+        if ($customer === null || $booking->customer_id !== $customer->getKey()) {
+            return false;
+        }
+
+        session()->put(self::SESSION_KEY, $booking->getKey());
+
+        return true;
+    }
+
+    /** Set from inside the portal; from then on the customer signs in with their mobile number. */
+    public function setPassword(Customer $customer, string $password): void
+    {
+        $customer->forceFill(['portal_password' => Hash::make($password), 'portal_password_set_at' => now()])->save();
+        $this->signIn($customer);
+    }
+
+    public function signOut(): void
+    {
+        session()->forget([self::SESSION_KEY, self::SESSION_KEY.'.access', self::CUSTOMER_KEY]);
+        session()->invalidate();
     }
 
     public function revokeAll(Booking $booking): int

@@ -65,6 +65,10 @@ class Settings extends Page
                         TextInput::make(Store::PASSPORT_VALIDITY_MONTHS)
                             ->label('Passport must be valid for, after the return date (months)')
                             ->numeric()->integer()->minValue(0)->maxValue(24)->required(),
+                        Textarea::make(Store::AGREEMENT_TERMS)
+                            ->label('Customer agreement')
+                            ->helperText('What a customer signs for each booking, in the portal or on paper. {company}, {customer}, {booking} and {trip} are filled in. An agreement already signed keeps the wording it was signed with.')
+                            ->rows(14)->required()->maxLength(20000),
                     ]),
             ]);
     }

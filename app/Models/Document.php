@@ -55,6 +55,9 @@ class Document extends Model
 
     public const OTHER = 'other';
 
+    /** A scan of a booking's agreement signed on paper. */
+    public const AGREEMENT = 'agreement';
+
     /** @var array<string, string> */
     public const TYPES = [
         self::ID_CARD => 'ID card',
@@ -63,6 +66,7 @@ class Document extends Model
         self::VISA => 'Visa',
         self::VACCINATION => 'Vaccination certificate',
         self::EVIDENCE => 'Evidence (receipt, advice, slip)',
+        self::AGREEMENT => 'Signed agreement',
         self::OTHER => 'Other',
     ];
 

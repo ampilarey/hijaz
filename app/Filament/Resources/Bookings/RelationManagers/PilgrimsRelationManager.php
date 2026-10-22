@@ -9,6 +9,7 @@ use App\Models\BookingPilgrim;
 use App\Models\Pilgrim;
 use App\Models\PriceTier;
 use App\Services\Bookings\BookingDesk;
+use App\Services\Invoices\CustomerPapers;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
@@ -92,6 +93,9 @@ class PilgrimsRelationManager extends RelationManager
             ])
             ->recordActions([
                 ActionGroup::make([
+                    Action::make('letter')->label('Travel letter')->icon('heroicon-o-envelope-open')->color('gray')
+                        ->visible(fn (BookingPilgrim $record): bool => CustomerPapers::letterReady($record))
+                        ->url(fn (BookingPilgrim $record): string => route('booking-pilgrims.letter', $record), shouldOpenInNewTab: true),
                     EditAction::make()->label('Ticket / visa')->authorize($this->may('update')),
                     Action::make('open')->label('Pilgrim')->icon('heroicon-o-user')->color('gray')
                         ->url(fn (BookingPilgrim $record): string => PilgrimResource::getUrl('edit', ['record' => $record->pilgrim])),
