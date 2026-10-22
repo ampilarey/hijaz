@@ -34,6 +34,11 @@ final class Ledger
             throw new \InvalidArgumentException('A payment must be for more than nothing.');
         }
 
+        // Money is taken against a price: until the trip's price covers everyone on the booking, nothing is owed.
+        if ($payable instanceof Booking && $payable->awaitsPrice()) {
+            throw new \InvalidArgumentException('This booking has no price yet. Set the trip\'s prices first; payments can be taken once everyone on it is priced.');
+        }
+
         return DB::transaction(function () use ($payable, $money, $method, $details): Payment {
             $payment = Payment::query()->create(array_merge([
                 'payable_type' => $payable->getMorphClass(),

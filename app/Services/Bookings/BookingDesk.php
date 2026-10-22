@@ -202,6 +202,42 @@ final class BookingDesk
         }
     }
 
+    /**
+     * Price everyone registered before the trip had a price for their room.
+     * Fares already set are never touched: a customer keeps the price they
+     * were given. Returns how many were priced.
+     */
+    public function priceWaiting(Trip $trip): int
+    {
+        $trip->unsetRelation('priceTiers');
+        $n = 0;
+
+        $waiting = BookingPilgrim::query()
+            ->whereNull('price_tier_id')->where('amount_minor', 0)
+            ->whereHas('booking', fn ($b) => $b->where('trip_id', $trip->getKey())->whereIn('status', [Booking::DRAFT, Booking::CONFIRMED]))
+            ->with(['booking', 'pilgrim'])
+            ->get();
+
+        foreach ($waiting as $bp) {
+            DB::transaction(function () use ($trip, $bp, &$n): void {
+                $paxType = $bp->pilgrim->paxTypeOn($bp->departsOn() ?? today());
+                $tier = $this->tierFor($trip, $bp->occupancy, $paxType);
+
+                if ($tier === null) {
+                    return;
+                }
+
+                $bp->forceFill(['pax_type' => $paxType, 'price_tier_id' => $tier->getKey(), 'amount_minor' => $tier->amount_minor, 'currency' => $tier->currency])->save();
+                $this->line($bp->booking, $bp, $bp->occupancy === PriceTier::SINGLE ? BookingLine::ROOM_UPGRADE : BookingLine::SEAT,
+                    $bp->pilgrim->name_en.' · '.$tier->label(), $tier->amount_minor, $tier->currency);
+                $bp->booking->recalculateTotals();
+                $n++;
+            });
+        }
+
+        return $n;
+    }
+
     public function tierFor(Trip $trip, string $occupancy, string $paxType): ?PriceTier
     {
         return $trip->priceTiers->first(fn (PriceTier $t): bool => $t->occupancy === $occupancy && $t->pax_type === $paxType)

@@ -12,14 +12,17 @@ use App\Filament\Resources\Trips\RelationManagers\FlightsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\PriceTiersRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\TravellersRelationManager;
 use App\Filament\Resources\Trips\TripResource;
+use App\Models\Payment;
 use App\Models\PriceTier;
 use App\Models\Trip;
 use App\Models\User;
 use App\Services\Bookings\BookingDesk;
 use App\Services\Operations\Readiness;
+use App\Services\Payments\Ledger;
 use App\Services\Telegram\Bot;
 use App\Services\Telegram\Linker;
 use App\Support\Access;
+use App\Support\Money;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -282,6 +285,37 @@ class TripAdminTest extends TestCase
 
         $first->delete();
         $this->assertSame('2027-05-22', $trip->fresh()->departs_on->toDateString());
+    }
+
+    public function test_customers_register_before_the_price_and_pay_once_it_is_set(): void
+    {
+        $trip = Trip::factory()->open()->create(['name' => 'July 2027 Umrah', 'departs_on' => null, 'returns_on' => null]);
+        [$customer, $head, $spouse] = PricedTrip::family();
+        $desk = app(BookingDesk::class);
+        $booking = $desk->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD], ['pilgrim_id' => $spouse->id, 'occupancy' => PriceTier::QUAD]]);
+
+        $this->assertTrue($booking->awaitsPrice());
+        $this->assertSame('price not set yet', $booking->balanceSummary());
+
+        try {
+            app(Ledger::class)->record($booking, Money::ofMajor('1000', 'MVR'), Payment::CASH);
+            $this->fail('A payment was taken on a booking with no price.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('no price yet', $e->getMessage());
+        }
+
+        $trip->priceTiers()->create(['occupancy' => PriceTier::QUAD, 'pax_type' => PriceTier::ADULT, 'amount_minor' => 2850000, 'currency' => 'MVR']);
+
+        $booking->refresh();
+        $this->assertFalse($booking->awaitsPrice());
+        $this->assertSame('MVR 57,000', $booking->total('MVR')->format());
+
+        $payment = app(Ledger::class)->record($booking, Money::ofMajor('1000', 'MVR'), Payment::CASH);
+        $this->assertNotNull($payment->id);
+
+        // A later price change does not reprice anyone already priced.
+        $trip->priceTiers()->first()->update(['amount_minor' => 3000000]);
+        $this->assertSame('MVR 57,000', $booking->fresh()->total('MVR')->format());
     }
 
     public function test_a_cancellation_needs_a_reason(): void

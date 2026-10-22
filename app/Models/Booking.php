@@ -244,11 +244,21 @@ class Booking extends Model implements TakesPayments
     {
         $due = array_filter($this->balances(), fn (Money $m): bool => $m->minor > 0);
 
+        if ($this->awaitsPrice()) {
+            return $due === [] ? 'price not set yet' : implode(' and ', array_map(fn (Money $m): string => $m->format(), $due)).' due · price not set for everyone';
+        }
+
         if ($due === []) {
             return $this->currencies() === [] ? 'nothing priced yet' : 'paid in full';
         }
 
         return implode(' and ', array_map(fn (Money $m): string => $m->format(), $due)).' due';
+    }
+
+    /** Someone on it has no fare yet: the trip had no price for their room when they were registered. */
+    public function awaitsPrice(): bool
+    {
+        return $this->pilgrims()->whereNull('price_tier_id')->where('amount_minor', 0)->exists();
     }
 
     /** Re-derive the per-currency totals from the lines. The ledger does the same for paid. */

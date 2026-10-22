@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Bookings\BookingDesk;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -52,6 +53,12 @@ class PriceTier extends Model
         self::CHILD => 'Child (2 to 11)',
         self::INFANT => 'Infant (under 2)',
     ];
+
+    /** A new price reaches everyone who was registered while the trip had none for their room. */
+    protected static function booted(): void
+    {
+        static::saved(fn (PriceTier $tier) => app(BookingDesk::class)->priceWaiting($tier->trip));
+    }
 
     /** @var list<string> */
     protected $fillable = ['trip_id', 'occupancy', 'pax_type', 'amount_minor', 'currency', 'sort_order'];
