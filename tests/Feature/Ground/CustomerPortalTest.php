@@ -159,7 +159,7 @@ class CustomerPortalTest extends TestCase
     {
         $booking = $this->booking();
         $share = CustomerShare::for($booking, 'https://example.test/my/enter/abc');
-        $headPhone = ltrim((string) \App\Support\Phone::normalise($booking->customer->head->phone), '+');
+        $headPhone = ltrim((string) Phone::normalise($booking->customer->head->phone), '+');
 
         // With no leader named, the head of family is the contact, on their own mobile.
         $this->assertStringStartsWith('https://wa.me/'.$headPhone.'?text=', $share['whatsapp']);
