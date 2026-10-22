@@ -53,7 +53,7 @@ final class Lists
 
         return new ListDocument(
             title: (self::PRESETS[$preset] ?? 'List'),
-            subtitle: $trip->name.' · '.$trip->code.' · '.$trip->departs_on->format('j M').' – '.$trip->returns_on->format('j M Y').' · '.count($rows).' travellers',
+            subtitle: $trip->name.' · '.$trip->code.' · '.$trip->datesLabel().' · '.count($rows).' travellers',
             columns: $columns,
             rows: $rows,
             landscape: count($columns) > 7,

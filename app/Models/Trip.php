@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\Auth;
  * @property int $id
  * @property string $code
  * @property string $name
- * @property Carbon $departs_on
- * @property Carbon $returns_on
+ * @property Carbon|null $departs_on Empty on a draft whose dates are not fixed yet
+ * @property Carbon|null $returns_on
  * @property int $capacity_total
  * @property int $capacity_held
  * @property int $capacity_confirmed
@@ -105,12 +105,26 @@ class Trip extends Model
             $trip->code = $trip->code ?: static::nextCode($trip->departs_on);
             $trip->created_by ??= Auth::id();
         });
+
+        // A trip made before its dates were known takes its real code once it has a departure date.
+        static::updating(function (Trip $trip): void {
+            if (! $trip->hasDates() && ($trip->hasBookings() || ! in_array($trip->status, [self::DRAFT, self::CANCELLED], true))) {
+                throw new \DomainException('A trip that is open or has bookings must keep both its dates.');
+            }
+
+            if (str_starts_with((string) $trip->code, self::UNDATED_CODE) && $trip->departs_on !== null) {
+                $trip->code = static::nextCode($trip->departs_on);
+            }
+        });
     }
 
+    /** The code of a trip with no dates yet, until it gets one: "UMR-TBA", "UMR-TBA-2". */
+    public const UNDATED_CODE = 'UMR-TBA';
+
     /** "UMR-2027-07", with a suffix when a month already has one. */
-    public static function nextCode(Carbon|string $departsOn): string
+    public static function nextCode(Carbon|string|null $departsOn): string
     {
-        $base = 'UMR-'.Carbon::parse($departsOn)->format('Y-m');
+        $base = $departsOn === null || $departsOn === '' ? self::UNDATED_CODE : 'UMR-'.Carbon::parse($departsOn)->format('Y-m');
         $code = $base;
 
         for ($n = 2; static::query()->where('code', $code)->exists(); $n++) {
@@ -249,6 +263,10 @@ class Trip extends Model
             throw IllegalTripTransition::from($this->status, $status);
         }
 
+        if (! $this->hasDates() && $status !== self::CANCELLED) {
+            throw IllegalTripTransition::becauseDatesAreUnset();
+        }
+
         $from = $this->status;
         $this->forceFill(['status' => $status])->save();
 
@@ -286,7 +304,29 @@ class Trip extends Model
 
     public function nights(): int
     {
-        return max(0, (int) $this->departs_on->diffInDays($this->returns_on));
+        return $this->hasDates() ? max(0, (int) $this->departs_on->diffInDays($this->returns_on)) : 0;
+    }
+
+    /** Both dates set. A trip without them stays a draft and takes no booking. */
+    public function hasDates(): bool
+    {
+        return $this->departs_on !== null && $this->returns_on !== null;
+    }
+
+    /** "30 Nov – 14 Dec 2026", or what is known so far. */
+    public function datesLabel(string $from = 'j M', string $to = 'j M Y'): string
+    {
+        return match (true) {
+            $this->hasDates() => $this->departs_on->format($from).' – '.$this->returns_on->format($to),
+            $this->departs_on !== null => 'departs '.$this->departs_on->format($to).', return date not set',
+            default => 'dates not set',
+        };
+    }
+
+    /** "30 Nov", or "date not set". */
+    public function departsLabel(string $format = 'j M'): string
+    {
+        return $this->departs_on?->format($format) ?? 'date not set';
     }
 
     /** Any booking at all, cancelled ones included: each carries money and pilgrims' history. */
@@ -324,6 +364,6 @@ class Trip extends Model
 
     public function getLabelAttribute(): string
     {
-        return $this->name.' ('.$this->departs_on->format('j M').' – '.$this->returns_on->format('j M Y').')';
+        return $this->name.' ('.$this->datesLabel().')';
     }
 }

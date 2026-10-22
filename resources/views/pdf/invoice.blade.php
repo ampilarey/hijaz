@@ -12,7 +12,7 @@
 
 @section('meta')
     <tr><td class="k">Customer</td><td class="strong">{{ $booking->customer->name }}@if ($booking->customer->phone) <span class="muted">· {{ $booking->customer->phone }}</span>@endif</td></tr>
-    <tr><td class="k">Trip</td><td>{{ $booking->trip->name }} <span class="muted">· {{ $booking->trip->code }} · {{ $booking->trip->departs_on->format('j M') }} – {{ $booking->trip->returns_on->format('j M Y') }}</span></td></tr>
+    <tr><td class="k">Trip</td><td>{{ $booking->trip->name }} <span class="muted">· {{ $booking->trip->code }} · {{ $booking->trip->datesLabel() }}</span></td></tr>
     <tr><td class="k">Status</td><td>{{ $booking->statusLabel() }}</td></tr>
 @endsection
 

@@ -75,7 +75,7 @@
                 @foreach ($readiness as $r)
                     <a class="hz-row" href="{{ \App\Filament\Resources\Trips\TripResource::getUrl('readiness', ['record' => $r['trip']]) }}">
                         <span class="hz-row__text">
-                            <span class="hz-row__title">{{ $r['trip']->code }} · departs {{ $r['trip']->departs_on->format('j M') }}</span>
+                            <span class="hz-row__title">{{ $r['trip']->code }} · departs {{ $r['trip']->departsLabel() }}</span>
                             <span class="hz-row__hint">{{ implode('; ', $r['blockers']) }}</span>
                         </span>
                         {!! $chevron !!}
@@ -106,7 +106,7 @@
                     <a class="hz-row" href="{{ \App\Filament\Resources\Trips\TripResource::getUrl('edit', ['record' => $trip]) }}">
                         <span class="hz-row__text">
                             <span class="hz-row__title">{{ $trip->name }}</span>
-                            <span class="hz-row__hint">{{ $trip->departs_on->format('j M') }} · {{ $trip->seatsTaken() }} of {{ $trip->capacity_total }} seats · {{ strtolower($trip->statusLabel()) }}</span>
+                            <span class="hz-row__hint">{{ $trip->departsLabel() }} · {{ $trip->seatsTaken() }} of {{ $trip->capacity_total }} seats · {{ strtolower($trip->statusLabel()) }}</span>
                         </span>
                         {!! $chevron !!}
                     </a>

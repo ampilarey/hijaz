@@ -226,7 +226,7 @@ class Router
 
             $lines = [
                 '<b>'.e($trip->name).'</b> · '.e($trip->code),
-                e($trip->departs_on->format('j M')).' – '.e($trip->returns_on->format('j M Y')).' · '.e($trip->statusLabel()),
+                e($trip->datesLabel()).' · '.e($trip->statusLabel()),
                 'Seats: '.$trip->seatsTaken().' of '.$trip->capacity_total,
             ];
 
@@ -274,7 +274,7 @@ class Router
             return 'No upcoming trips. Create one in the portal under Trips.';
         }
 
-        return implode("\n", array_merge(['<b>Upcoming trips</b>'], $trips->map(fn (Trip $t): string => e($t->code).' · '.e($t->name).' · '.e($t->departs_on->format('j M')).' · '.$t->seatsTaken().'/'.$t->capacity_total.' seats · '.e(strtolower($t->statusLabel())))->all(), ['', 'Send /trip CODE for one trip.']));
+        return implode("\n", array_merge(['<b>Upcoming trips</b>'], $trips->map(fn (Trip $t): string => e($t->code).' · '.e($t->name).' · '.e($t->departsLabel()).' · '.$t->seatsTaken().'/'.$t->capacity_total.' seats · '.e(strtolower($t->statusLabel())))->all(), ['', 'Send /trip CODE for one trip.']));
     }
 
     private function find(string $argument): string
@@ -371,7 +371,7 @@ class Router
         }
 
         $concerns = app(Readiness::class)->concerns($trip);
-        $lines = ['<b>'.e($trip->name).'</b> · '.e($trip->code).' · departs '.e($trip->departs_on->format('j M')).' ('.e($trip->departs_on->diffForHumans()).')'];
+        $lines = ['<b>'.e($trip->name).'</b> · '.e($trip->code).' · '.e($trip->departs_on ? 'departs '.$trip->departs_on->format('j M').' ('.$trip->departs_on->diffForHumans().')' : 'dates not set')];
 
         if ($concerns === []) {
             $lines[] = 'Ready. Nothing stands in the way.';

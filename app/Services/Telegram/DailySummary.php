@@ -91,7 +91,7 @@ class DailySummary
                 $lines[] = '<b>Trips ahead</b>';
 
                 foreach ($trips as $trip) {
-                    $lines[] = '• '.e($trip->code).' · '.e($trip->departs_on->format('j M')).' · '.$trip->seatsTaken().'/'.$trip->capacity_total.' seats';
+                    $lines[] = '• '.e($trip->code).' · '.e($trip->departsLabel()).' · '.$trip->seatsTaken().'/'.$trip->capacity_total.' seats';
                 }
             }
         }

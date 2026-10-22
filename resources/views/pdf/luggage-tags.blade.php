@@ -32,7 +32,7 @@
                     <td style="width: 26mm;"><img src="{{ public_path('images/brand/hijaz-mark.png') }}" alt="" style="width: 22mm; height: 22mm;"></td>
                     <td>
                         <div class="brand">{{ $issuer['name'] }}</div>
-                        <div class="trip">{{ $item['trip']->name }} · {{ $item['trip']->code }} · {{ $item['trip']->departs_on->format('j M Y') }}</div>
+                        <div class="trip">{{ $item['trip']->name }} · {{ $item['trip']->code }} · {{ $item['trip']->departsLabel('j M Y') }}</div>
                     </td>
                     <td style="width: 42mm; text-align: center;">
                         <img class="qr" src="{{ $item['qr'] }}" alt="">

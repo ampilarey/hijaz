@@ -16,10 +16,10 @@ class TripCopier
 {
     public function copy(Trip $from, string $name, Carbon $departsOn): Trip
     {
-        $shift = (int) $from->departs_on->diffInDays($departsOn, false);
+        $shift = $from->departs_on ? (int) $from->departs_on->diffInDays($departsOn, false) : 0;
         $shifted = fn (?Carbon $date): ?string => $date?->copy()->addDays($shift)->toDateString();
 
-        return DB::transaction(function () use ($from, $name, $departsOn, $shifted): Trip {
+        return DB::transaction(function () use ($from, $name, $departsOn, $shifted, $shift): Trip {
             $to = Trip::query()->create([
                 'name' => $name,
                 'departs_on' => $departsOn->toDateString(),
@@ -37,8 +37,8 @@ class TripCopier
                 $to->flights()->create(array_merge(
                     $flight->only(['direction', 'airline', 'flight_number', 'from_airport', 'to_airport', 'seats', 'notes', 'sort_order']),
                     [
-                        'departs_at' => $flight->departs_at->copy()->addDays((int) $from->departs_on->diffInDays($departsOn, false)),
-                        'arrives_at' => $flight->arrives_at?->copy()->addDays((int) $from->departs_on->diffInDays($departsOn, false)),
+                        'departs_at' => $flight->departs_at->copy()->addDays($shift),
+                        'arrives_at' => $flight->arrives_at?->copy()->addDays($shift),
                     ],
                 ));
             }

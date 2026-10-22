@@ -78,7 +78,7 @@ class ChecklistRelationManager extends RelationManager
                         /** @var Trip $to */
                         $to = $this->getOwnerRecord();
                         $from = Trip::query()->findOrFail($data['from']);
-                        $shift = (int) $from->departs_on->diffInDays($to->departs_on, false);
+                        $shift = $from->departs_on && $to->departs_on ? (int) $from->departs_on->diffInDays($to->departs_on, false) : 0;
 
                         $count = DB::transaction(function () use ($from, $to, $shift): int {
                             $n = 0;

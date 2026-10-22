@@ -118,8 +118,8 @@ final class Readiness
     /** @param  Collection<int, BookingPilgrim>  $travellers */
     private function passports(Trip $trip, Collection $travellers): array
     {
-        $short = $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($trip->returns_on) === false);
-        $unknown = $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($trip->returns_on) === null);
+        $short = $trip->returns_on === null ? collect() : $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($trip->returns_on) === false);
+        $unknown = $trip->returns_on === null ? collect() : $travellers->filter(fn (BookingPilgrim $bp): bool => $bp->pilgrim->passportOkFor($trip->returns_on) === null);
         $out = [];
 
         if ($short->isNotEmpty()) {

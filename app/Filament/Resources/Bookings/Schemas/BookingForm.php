@@ -32,7 +32,7 @@ class BookingForm
                 ->columns(2)
                 ->schema([
                     Select::make('trip_id')->label('Trip')->required()->native(false)->live()
-                        ->options(fn (): array => TripOptions::all(liveOnly: true))
+                        ->options(fn (): array => TripOptions::all(liveOnly: true, datedOnly: true))
                         ->helperText(function (Get $get): ?string {
                             $trip = filled($get('trip_id')) ? Trip::query()->find($get('trip_id')) : null;
 

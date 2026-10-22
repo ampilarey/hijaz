@@ -1,7 +1,7 @@
 @extends('layouts.ground', ['title' => $booking->reference, 'heading' => $booking->trip->name, 'subheading' => $booking->reference.' · '.$booking->customer->name])
 @section('content')
     <section class="mb-4 rounded-xl border border-brand-sky bg-white px-4 py-4">
-        <p class="text-sm text-brand-muted">{{ $booking->trip->departs_on->format('j F') }} – {{ $booking->trip->returns_on->format('j F Y') }} · {{ $booking->statusLabel() }}</p>
+        <p class="text-sm text-brand-muted">{{ $booking->trip->datesLabel('j F', 'j F Y') }} · {{ $booking->statusLabel() }}</p>
         @foreach ($booking->trip->hotels as $h)<p class="text-sm">{{ $h->cityLabel() }}: {{ $h->name }} ({{ $h->check_in_on->format('j M') }} – {{ $h->check_out_on->format('j M') }})</p>@endforeach
         <div class="mt-3 grid grid-cols-3 gap-2 text-sm">
             @foreach ($booking->currencies() as $c)

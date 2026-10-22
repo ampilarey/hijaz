@@ -23,7 +23,7 @@ class BookingInfolist
                             Booking::CONFIRMED => 'success', Booking::CANCELLED => 'danger', Booking::COMPLETED => 'gray', default => 'warning',
                         }),
                     TextEntry::make('trip.name')->label('Trip')->url(fn (Booking $record): string => TripResource::getUrl('view', ['record' => $record->trip]))
-                        ->helperText(fn (Booking $record): string => $record->trip->code.' · '.$record->trip->departs_on->format('j M').' – '.$record->trip->returns_on->format('j M Y')),
+                        ->helperText(fn (Booking $record): string => $record->trip->code.' · '.$record->trip->datesLabel()),
                     TextEntry::make('customer.name')->label('Customer')->url(fn (Booking $record): string => CustomerResource::getUrl('edit', ['record' => $record->customer]))
                         ->helperText(fn (Booking $record): ?string => $record->customer->phone),
                     TextEntry::make('seats')->label('Seats')

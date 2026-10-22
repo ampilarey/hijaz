@@ -3,7 +3,7 @@
     @forelse ($trips as $trip)
         <a href="{{ route('ground.trip', $trip) }}" class="mb-3 block rounded-xl border border-brand-sky bg-white px-4 py-4">
             <p class="font-semibold">{{ $trip->name }}</p>
-            <p class="text-sm text-brand-muted">{{ $trip->code }} · {{ $trip->departs_on->format('j M') }} – {{ $trip->returns_on->format('j M Y') }} · {{ strtolower($trip->statusLabel()) }}</p>
+            <p class="text-sm text-brand-muted">{{ $trip->code }} · {{ $trip->datesLabel() }} · {{ strtolower($trip->statusLabel()) }}</p>
         </a>
     @empty
         <p class="rounded-xl border border-brand-sky bg-white px-4 py-4 text-brand-muted">No trip on the road is yours. The office puts you on a bus as its leader and it appears here.</p>

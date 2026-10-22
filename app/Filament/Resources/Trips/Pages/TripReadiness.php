@@ -35,7 +35,7 @@ class TripReadiness extends Page
         /** @var Trip $trip */
         $trip = $this->getRecord();
 
-        return $trip->name.' · departs '.$trip->departs_on->format('j M Y').' · '.$trip->departs_on->diffForHumans();
+        return $trip->name.' · '.($trip->departs_on ? 'departs '.$trip->departs_on->format('j M Y').' · '.$trip->departs_on->diffForHumans() : 'dates not set');
     }
 
     /** @return array<string, mixed> */

@@ -221,6 +221,42 @@ class TripAdminTest extends TestCase
         $this->assertTrue($this->staff(Access::OPERATIONS)->can('delete', $trip));
     }
 
+    public function test_a_trip_can_be_saved_before_its_dates_are_fixed_and_opens_only_once_they_are(): void
+    {
+        $this->actingAs($this->staff(Access::OPERATIONS));
+
+        Livewire::test(CreateTrip::class)
+            ->fillForm(['name' => 'Hajj 2027', 'capacity_total' => 40])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $trip = Trip::query()->where('name', 'Hajj 2027')->firstOrFail();
+        $this->assertNull($trip->departs_on);
+        $this->assertSame(Trip::UNDATED_CODE, $trip->code);
+        $this->assertSame('Hajj 2027 (dates not set)', $trip->label);
+
+        Livewire::test(EditTrip::class, ['record' => $trip->getRouteKey()])->callAction('to_open');
+        $this->assertSame(Trip::DRAFT, $trip->fresh()->status);
+
+        $trip->update(['departs_on' => '2027-05-20', 'returns_on' => '2027-06-10']);
+        $this->assertSame('UMR-2027-05', $trip->fresh()->code);
+
+        Livewire::test(EditTrip::class, ['record' => $trip->getRouteKey()])->callAction('to_open');
+        $this->assertSame(Trip::OPEN, $trip->fresh()->status);
+
+        $this->expectException(\DomainException::class);
+        $trip->fresh()->update(['departs_on' => null]);
+    }
+
+    public function test_nobody_is_booked_on_a_trip_without_dates(): void
+    {
+        $trip = Trip::factory()->create(['departs_on' => null, 'returns_on' => null]);
+        [$customer, $head] = PricedTrip::family();
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(BookingDesk::class)->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD]]);
+    }
+
     public function test_a_cancellation_needs_a_reason(): void
     {
         $this->actingAs($this->staff(Access::OPERATIONS));

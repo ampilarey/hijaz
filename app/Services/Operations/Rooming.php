@@ -166,12 +166,12 @@ final class Rooming
         }
 
         $under = (int) config('booking.room_child_under', 16);
-        $children = $occupants->filter(fn (BookingPilgrim $bp): bool => ($age = $bp->pilgrim->ageOn($trip->departs_on)) !== null && $age < $under);
+        $children = $occupants->filter(fn (BookingPilgrim $bp): bool => ($age = $bp->pilgrim->ageOn($trip->departs_on ?? today())) !== null && $age < $under);
 
         if ($children->isNotEmpty()) {
             // An adult of their own booking; a stranger's company is not supervision.
             $bookings = $children->pluck('booking_id')->unique();
-            $adultsOfTheirs = $occupants->filter(fn (BookingPilgrim $bp): bool => $bookings->contains($bp->booking_id) && (($age = $bp->pilgrim->ageOn($trip->departs_on)) === null || $age >= $under));
+            $adultsOfTheirs = $occupants->filter(fn (BookingPilgrim $bp): bool => $bookings->contains($bp->booking_id) && (($age = $bp->pilgrim->ageOn($trip->departs_on ?? today())) === null || $age >= $under));
 
             if ($adultsOfTheirs->isEmpty()) {
                 $problems[] = ['type' => self::UNACCOMPANIED_CHILD, 'room' => $room->label, 'who' => $names($children), 'detail' => 'Under '.$under.', with no adult of their family in the room.'];

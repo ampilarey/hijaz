@@ -21,7 +21,7 @@ class TripsTable
                     TextColumn::make('name')
                         ->searchable()
                         ->weight('medium')
-                        ->description(fn (Trip $record): string => $record->departs_on->format('j M').' – '.$record->returns_on->format('j M Y').' · '.$record->code),
+                        ->description(fn (Trip $record): string => $record->datesLabel().' · '.$record->code),
                     TextColumn::make('status')
                         ->badge()
                         ->grow(false)

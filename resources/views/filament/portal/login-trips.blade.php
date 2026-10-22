@@ -8,7 +8,7 @@
     @foreach ($trips as $trip)
         <div style="border: 1px solid var(--gray-200, #e7e5e4); border-radius: .75rem; padding: .75rem 1rem;">
             <p style="font-weight: 600;">{{ $trip->name }} <span class="fi-color-gray" style="font-weight: 400;">· {{ $trip->code }}</span></p>
-            <p style="font-size: .875rem;">{{ $trip->departs_on->format('j M') }} – {{ $trip->returns_on->format('j M Y') }} · {{ $trip->nights() }} nights</p>
+            <p style="font-size: .875rem;">{{ $trip->datesLabel() }} · {{ $trip->nights() }} nights</p>
             @if ($trip->hotels->isNotEmpty())
                 <p class="fi-color-gray" style="font-size: .875rem;">{{ $trip->hotels->map(fn ($h) => $h->cityLabel().': '.$h->name)->implode(' · ') }}</p>
             @endif

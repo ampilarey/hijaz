@@ -33,6 +33,11 @@ final class BookingDesk
             throw new \InvalidArgumentException('A booking needs at least one pilgrim.');
         }
 
+        // Fares depend on each pilgrim's age on the departure day, so there is no booking without one.
+        if (! $trip->hasDates()) {
+            throw new \InvalidArgumentException('Set the trip\'s dates before booking anyone on it.');
+        }
+
         return DB::transaction(function () use ($trip, $customer, $party, $notes): Booking {
             $booking = Booking::query()->create(['trip_id' => $trip->getKey(), 'customer_id' => $customer->getKey(), 'notes' => $notes]);
             $booking->forceFill(['trip_snapshot' => $this->snapshot($trip)])->save();

@@ -10,4 +10,9 @@ class IllegalTripTransition extends RuntimeException
     {
         return new self("A trip cannot go from {$from} to {$to}.");
     }
+
+    public static function becauseDatesAreUnset(): self
+    {
+        return new self('Set the departure and return dates first: a trip without them stays a draft.');
+    }
 }

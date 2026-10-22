@@ -88,7 +88,7 @@ final class Reports
 
         return new ReportDocument(
             title: 'Profit and loss',
-            subtitle: $trip->name.' · '.$trip->code.' · '.$trip->departs_on->format('j M').' – '.$trip->returns_on->format('j M Y'),
+            subtitle: $trip->name.' · '.$trip->code.' · '.$trip->datesLabel(),
             figures: $figures,
             sections: [
                 new ListDocument('Income by category', 'From the books', ['category' => 'Category', 'amounts' => 'Amounts', 'mvr' => 'MVR'], $rows($income)),
@@ -288,7 +288,7 @@ final class Reports
                 'customer' => $b->customer->name,
                 'phone' => (string) $b->customer->phone,
                 'trip' => $b->trip->code,
-                'departs' => $b->trip->departs_on->format('d/m/Y'),
+                'departs' => $b->trip->departs_on?->format('d/m/Y') ?? '',
                 'due' => implode(' · ', array_map(fn (Money $m) => $m->format(), $due)),
                 'age' => $b->confirmed_at ? (int) $b->confirmed_at->diffInDays(now()).' days' : '',
                 'overdue' => $overdueSince ? 'since '.Carbon::parse($overdueSince)->format('d/m/Y') : '',
@@ -379,7 +379,7 @@ final class Reports
                 $d->isVerified() => 'verified',
                 default => 'to check',
             };
-            $expiring = $p->passportOkFor($trip->returns_on) === false;
+            $expiring = $trip->returns_on !== null && $p->passportOkFor($trip->returns_on) === false;
             $counts['expiring'] += $expiring ? 1 : 0;
             $all = collect(Document::REQUIRED_FOR_PILGRIMS)->map($state);
             $counts['verified'] += $all->every(fn ($s) => $s === 'verified') ? 1 : 0;
@@ -511,7 +511,7 @@ final class Reports
 
         return new ReportDocument(
             title: 'USD allocation list',
-            subtitle: $trip->name.' · '.$trip->code.' · departs '.$trip->departs_on->format('j F Y'),
+            subtitle: $trip->name.' · '.$trip->code.' · departs '.$trip->departsLabel('j F Y'),
             figures: [['label' => 'Pilgrims', 'value' => (string) count($rows)], ['label' => 'Total requested', 'value' => Money::ofMinor($total, 'USD')->format()]],
             sections: [new ListDocument('Pilgrims', 'One row per ID number', ['n' => '#', 'name' => 'Name', 'id_number' => 'ID number', 'passport' => 'Passport', 'dob' => 'Date of birth', 'phone' => 'Phone', 'amount' => 'USD', 'note' => 'Note'], $rows)],
             notes: ['Prepared for the bank\'s USD allocation to Umrah pilgrims. Columns follow the bank\'s current form; adjust in Settings when the bank changes it.'],
