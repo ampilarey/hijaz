@@ -66,5 +66,11 @@
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true
+  },
+  "resources/js/pwa.js": {
+    "file": "assets/pwa-iHm8_M8L.js",
+    "name": "pwa",
+    "src": "resources/js/pwa.js",
+    "isEntry": true
   }
 }

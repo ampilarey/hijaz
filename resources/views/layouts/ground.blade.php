@@ -5,11 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#017a42">
     <title>{{ $title ?? config('hijaz.name') }}</title>
     <link rel="icon" href="{{ \App\Support\PublicAsset::url('images/brand/favicon.svg') }}" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="{{ \App\Support\PublicAsset::url('apple-touch-icon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('pwa.head', request()->is('my', 'my/*') ? ['manifest' => '/my.webmanifest', 'title' => 'Hijaz'] : ['manifest' => '/portal.webmanifest', 'title' => 'Hijaz Portal'])
 </head>
 <body class="min-h-screen bg-brand-sky-light text-brand-ink antialiased" @isset($sw) data-service-worker="{{ $sw }}" @endisset>
     <header class="bg-white border-b border-brand-sky">
