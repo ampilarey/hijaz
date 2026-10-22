@@ -2,10 +2,15 @@
 
 namespace App\Policies;
 
+use App\Models\Trip;
 use App\Models\User;
 use App\Policies\Concerns\ChecksPermissions;
+use Illuminate\Database\Eloquent\Model;
 
-/** No delete verb: a trip that will not run is cancelled, and its history stays. */
+/**
+ * A trip is deleted only while nothing hangs on it: no booking has ever been
+ * made. Once one has, the trip is cancelled instead and its history stays.
+ */
 class TripPolicy
 {
     use ChecksPermissions;
@@ -13,6 +18,11 @@ class TripPolicy
     protected function resource(): string
     {
         return 'trip';
+    }
+
+    public function delete(User $user, ?Model $record = null): bool
+    {
+        return $user->can('trip.delete') && ! ($record instanceof Trip && $record->hasBookings());
     }
 
     public function transition(User $user): bool

@@ -94,6 +94,13 @@ class Trip extends Model
 
     protected static function booted(): void
     {
+        // Admin passes every policy, so the rule lives here too: bookings mean money and pilgrims' history.
+        static::deleting(function (Trip $trip): void {
+            if ($trip->hasBookings()) {
+                throw new \DomainException('A trip with bookings cannot be deleted; cancel it instead.');
+            }
+        });
+
         static::creating(function (Trip $trip): void {
             $trip->code = $trip->code ?: static::nextCode($trip->departs_on);
             $trip->created_by ??= Auth::id();
@@ -280,6 +287,12 @@ class Trip extends Model
     public function nights(): int
     {
         return max(0, (int) $this->departs_on->diffInDays($this->returns_on));
+    }
+
+    /** Any booking at all, cancelled ones included: each carries money and pilgrims' history. */
+    public function hasBookings(): bool
+    {
+        return $this->bookings()->exists();
     }
 
     public function seatsTaken(): int

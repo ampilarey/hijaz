@@ -10,8 +10,10 @@ use App\Filament\Resources\Trips\RelationManagers\ExcursionsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\FlightsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\PriceTiersRelationManager;
 use App\Filament\Resources\Trips\TripResource;
+use App\Models\PriceTier;
 use App\Models\Trip;
 use App\Models\User;
+use App\Services\Bookings\BookingDesk;
 use App\Services\Telegram\Bot;
 use App\Services\Telegram\Linker;
 use App\Support\Access;
@@ -19,6 +21,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
+use Tests\Support\PricedTrip;
 use Tests\TestCase;
 
 class TripAdminTest extends TestCase
@@ -176,6 +179,46 @@ class TripAdminTest extends TestCase
 
         $this->assertSame(2, Trip::count());
         $this->assertSame(Trip::DRAFT, Trip::where('name', 'Next year')->firstOrFail()->status);
+    }
+
+    public function test_operations_delete_a_trip_with_no_bookings_and_everything_set_on_it_goes_too(): void
+    {
+        $trip = Trip::factory()->create();
+        $trip->flights()->create(['direction' => 'outbound', 'airline' => 'Saudia', 'flight_number' => 'SV 789', 'from_airport' => 'MLE', 'to_airport' => 'JED', 'departs_at' => $trip->departs_on]);
+        $trip->checklist()->create(['title' => 'Book hotels']);
+
+        $this->actingAs($this->staff(Access::OPERATIONS));
+        Livewire::test(EditTrip::class, ['record' => $trip->getRouteKey()])
+            ->assertActionVisible('delete')
+            ->callAction('delete');
+
+        $this->assertModelMissing($trip);
+        $this->assertDatabaseCount('trip_flights', 0);
+        $this->assertDatabaseCount('trip_checklist_items', 0);
+        $this->assertDatabaseHas('audit_logs', ['auditable_type' => $trip->getMorphClass(), 'auditable_id' => (string) $trip->id, 'event' => 'deleted']);
+    }
+
+    public function test_a_trip_with_a_booking_is_cancelled_not_deleted_even_by_admin(): void
+    {
+        $trip = PricedTrip::make();
+        [$customer, $head] = PricedTrip::family();
+        app(BookingDesk::class)->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD]]);
+
+        $this->actingAs($this->staff(Access::ADMIN));
+        Livewire::test(EditTrip::class, ['record' => $trip->getRouteKey()])->assertActionHidden('delete');
+
+        $this->expectException(\DomainException::class);
+        $trip->delete();
+    }
+
+    public function test_registration_cannot_delete_a_trip(): void
+    {
+        $trip = Trip::factory()->create();
+
+        $registration = $this->staff(Access::REGISTRATION);
+
+        $this->assertFalse($registration->can('delete', $trip));
+        $this->assertTrue($this->staff(Access::OPERATIONS)->can('delete', $trip));
     }
 
     public function test_a_cancellation_needs_a_reason(): void

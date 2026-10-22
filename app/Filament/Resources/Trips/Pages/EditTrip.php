@@ -11,6 +11,7 @@ use App\Services\Trips\RouteBuilder;
 use App\Services\Trips\TripCopier;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -113,6 +114,12 @@ class EditTrip extends EditRecord
                         $n = $builder->build($trip);
                         Notification::make()->success()->title($n === 0 ? 'Nothing to build from yet' : "{$n} stops added")->send();
                     }),
+                DeleteAction::make()
+                    ->label('Delete trip')
+                    ->visible(fn (): bool => $trip->hasBookings() === false && (bool) auth()->user()?->can('delete', $trip))
+                    ->modalHeading('Delete '.$trip->name.'?')
+                    ->modalDescription('Its flights, hotels, route, prices, excursions, checklist and costs go with it. This cannot be undone. Only a trip with no bookings can be deleted; one with bookings is cancelled instead.')
+                    ->successNotificationTitle('Trip deleted'),
             ])->label('More')->icon('heroicon-o-ellipsis-horizontal')->button()->color('gray'),
         ];
     }

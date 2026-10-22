@@ -79,6 +79,7 @@ final class Access
         'trip.create',
         'trip.update',
         'trip.transition',
+        'trip.delete',
 
         'checklist.viewAny',
         'checklist.view',
@@ -209,6 +210,7 @@ final class Access
                 'trip.create',
                 'trip.update',
                 'trip.transition',
+                'trip.delete',
                 'checklist.create',
                 'checklist.update',
                 'checklist.delete',
