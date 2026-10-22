@@ -217,6 +217,12 @@ class Trip extends Model
     }
 
     /** @return HasMany<BusGroup, $this> */
+    /** @return HasMany<TripGroup, $this> */
+    public function groups(): HasMany
+    {
+        return $this->hasMany(TripGroup::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function busGroups(): HasMany
     {
         return $this->hasMany(BusGroup::class)->orderBy('sort_order')->orderBy('name');

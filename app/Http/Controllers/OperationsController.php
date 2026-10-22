@@ -34,7 +34,9 @@ class OperationsController extends Controller
 
         $only = $request->filled('ids') ? $this->lists->travellers($trip)->whereIn('id', array_map('intval', explode(',', (string) $request->query('ids')))) : null;
 
-        return $this->send($this->lists->manifest($trip, $preset, $only), $request, $trip, ['list' => 'manifest', 'preset' => $preset]);
+        $group = $request->filled('group') ? $trip->groups()->findOrFail((int) $request->query('group')) : null;
+
+        return $this->send($this->lists->manifest($trip, $preset, $only, $group), $request, $trip, array_filter(['list' => 'manifest', 'preset' => $preset, 'group' => $group?->name]));
     }
 
     public function busList(BusGroup $busGroup, Request $request): Response|StreamedResponse

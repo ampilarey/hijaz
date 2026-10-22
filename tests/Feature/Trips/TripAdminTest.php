@@ -17,6 +17,8 @@ use App\Models\PriceTier;
 use App\Models\Trip;
 use App\Models\User;
 use App\Services\Bookings\BookingDesk;
+use App\Services\Operations\Buses;
+use App\Services\Operations\Groups;
 use App\Services\Operations\Readiness;
 use App\Services\Payments\Ledger;
 use App\Services\Telegram\Bot;
@@ -254,36 +256,54 @@ class TripAdminTest extends TestCase
         $trip->fresh()->transitionTo(Trip::TRAVELLING, 'test');
     }
 
-    public function test_flights_set_the_trip_dates_and_each_traveller_flies_on_their_own(): void
+    public function test_flights_set_the_dates_and_each_group_flies_and_rides_on_its_own(): void
     {
         $trip = PricedTrip::make();
         $trip->update(['departs_on' => null, 'returns_on' => null]);
-        $first = $trip->flights()->create(['direction' => 'outbound', 'airline' => 'Saudia', 'flight_number' => 'SV 789', 'from_airport' => 'MLE', 'to_airport' => 'JED', 'departs_at' => '2027-05-20 23:40']);
-        $second = $trip->flights()->create(['direction' => 'outbound', 'airline' => 'Saudia', 'flight_number' => 'SV 791', 'from_airport' => 'MLE', 'to_airport' => 'JED', 'departs_at' => '2027-05-22 23:40']);
-        $trip->flights()->create(['direction' => 'return', 'airline' => 'Saudia', 'flight_number' => 'SV 788', 'from_airport' => 'MED', 'to_airport' => 'MLE', 'departs_at' => '2027-06-09 14:10', 'arrives_at' => '2027-06-10 01:00']);
+        $out1 = $trip->flights()->create(['direction' => 'outbound', 'airline' => 'Saudia', 'flight_number' => 'SV 789', 'from_airport' => 'MLE', 'to_airport' => 'JED', 'departs_at' => '2027-05-20 23:40']);
+        $out2 = $trip->flights()->create(['direction' => 'outbound', 'airline' => 'Saudia', 'flight_number' => 'SV 791', 'from_airport' => 'MLE', 'to_airport' => 'JED', 'departs_at' => '2027-05-22 23:40']);
+        $home = $trip->flights()->create(['direction' => 'return', 'airline' => 'Saudia', 'flight_number' => 'SV 788', 'from_airport' => 'MED', 'to_airport' => 'MLE', 'departs_at' => '2027-06-09 14:10', 'arrives_at' => '2027-06-10 01:00']);
 
         $trip->refresh();
         $this->assertSame('2027-05-20', $trip->departs_on->toDateString());
         $this->assertSame('2027-06-10', $trip->returns_on->toDateString());
 
+        $a = $trip->groups()->create(['name' => 'Group A', 'outbound_flight_id' => $out1->id, 'return_flight_id' => $home->id]);
+        $b = $trip->groups()->create(['name' => 'Group B', 'outbound_flight_id' => $out2->id, 'return_flight_id' => $home->id]);
+        $busA = $trip->busGroups()->create(['name' => 'Bus 1', 'trip_group_id' => $a->id, 'capacity' => 49, 'colour' => '#017a42']);
+
         [$customer, $head, $spouse] = PricedTrip::family();
-        $booking = app(BookingDesk::class)->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD], ['pilgrim_id' => $spouse->id, 'occupancy' => PriceTier::QUAD]]);
-        app(BookingDesk::class)->confirm($booking);
-        [$a, $b] = $booking->fresh()->pilgrims->all();
+        $desk = app(BookingDesk::class);
+        $booking = $desk->open($trip, $customer, [['pilgrim_id' => $head->id, 'occupancy' => PriceTier::QUAD], ['pilgrim_id' => $spouse->id, 'occupancy' => PriceTier::QUAD]]);
+        $desk->confirm($booking);
+        [$p1, $p2] = $booking->fresh()->pilgrims->all();
 
         $this->assertContains('2 travellers are on no flight out', app(Readiness::class)->blockers($trip->fresh()));
-        $this->assertNotContains('2 travellers are on no flight home', app(Readiness::class)->blockers($trip->fresh()));
 
         $this->actingAs($this->staff(Access::OPERATIONS));
         Livewire::test(TravellersRelationManager::class, ['ownerRecord' => $trip, 'pageClass' => EditTrip::class])
-            ->callTableBulkAction('flights', [$a->id], data: ['outbound_flight_id' => $second->id]);
+            ->callTableBulkAction('group', [$p1->id], data: ['trip_group_id' => $b->id]);
 
-        $this->assertSame('2027-05-22', $a->fresh()->departsOn()->toDateString());
-        $this->assertSame('2027-06-10', $a->fresh()->returnsOn()->toDateString());
-        $this->assertNull($b->fresh()->flightOut());
+        $this->assertSame('2027-05-22', $p1->fresh()->departsOn()->toDateString());
+        $this->assertSame('2027-06-10', $p1->fresh()->returnsOn()->toDateString());
         $this->assertContains('One traveller is on no flight out', app(Readiness::class)->blockers($trip->fresh()));
 
-        $first->delete();
+        // Bus 1 carries Group A: someone in Group B stays off it; someone in no group joins Group A with it.
+        $result = app(Buses::class)->assign($busA, [$p1->id, $p2->id]);
+        $this->assertSame(1, $result['assigned']);
+        $this->assertNull($p1->fresh()->bus_group_id);
+        $this->assertSame($a->id, $p2->fresh()->trip_group_id);
+        $this->assertSame('2027-05-20', $p2->fresh()->departsOn()->toDateString());
+
+        // Moving to another group takes them off their old group's bus.
+        app(Groups::class)->assign($b, [$p2->id]);
+        $this->assertNull($p2->fresh()->bus_group_id);
+
+        $csv = $this->get(route('lists.manifest', ['trip' => $trip, 'preset' => 'airline', 'group' => $b->id, 'format' => 'csv']))->assertOk()->streamedContent();
+        $this->assertStringContainsString('SV 791', $csv);
+        $this->assertStringContainsString($p2->pilgrim->name_en, $csv);
+
+        $out1->delete();
         $this->assertSame('2027-05-22', $trip->fresh()->departs_on->toDateString());
     }
 

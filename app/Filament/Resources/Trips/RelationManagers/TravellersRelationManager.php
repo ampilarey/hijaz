@@ -12,10 +12,11 @@ use App\Models\Document;
 use App\Models\Room;
 use App\Models\Trip;
 use App\Models\TripExcursion;
-use App\Models\TripFlight;
+use App\Models\TripGroup;
 use App\Models\TripHotel;
 use App\Services\Bookings\Excursions;
 use App\Services\Operations\Buses;
+use App\Services\Operations\Groups;
 use App\Services\Operations\Rooming;
 use App\Support\Money;
 use Filament\Actions\Action;
@@ -64,10 +65,10 @@ class TravellersRelationManager extends RelationManager
         $trip = $this->getOwnerRecord();
 
         return $schema->columns(2)->components([
-            Select::make('outbound_flight_id')->label('Flight out')->native(false)->placeholder('The trip\'s only flight out')
-                ->options(fn (): array => self::flightOptions($trip, TripFlight::OUTBOUND)),
-            Select::make('return_flight_id')->label('Flight home')->native(false)->placeholder('The trip\'s only flight home')
-                ->options(fn (): array => self::flightOptions($trip, TripFlight::RETURN)),
+            Select::make('trip_group_id')->label('Group')->native(false)->placeholder('No group yet')
+                ->options(fn (): array => $trip->groups()->pluck('name', 'id')->all())
+                ->helperText('The group decides the flights. Changing it here does not move them off their bus; use Put in a group for that.')
+                ->columnSpanFull(),
             TextInput::make('ticket_number')->label('Ticket number')->maxLength(30),
             TextInput::make('seat_number')->label('Seat')->maxLength(8),
             Select::make('visa_status')->label('Visa')->options(BookingPilgrim::VISA_STATUSES)->native(false)->required(),
@@ -85,11 +86,12 @@ class TravellersRelationManager extends RelationManager
         $hotels = $trip->hotels()->orderBy('check_in_on')->get();
 
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['pilgrim.documents.versions', 'booking.customer', 'booking.trip.flights', 'busGroup', 'roomAssignments.room', 'outboundFlight', 'returnFlight']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['pilgrim.documents.versions', 'booking.customer', 'booking.trip.flights', 'busGroup', 'roomAssignments.room', 'outboundFlight', 'returnFlight', 'group.outboundFlight', 'group.returnFlight']))
             ->columns([
                 TextColumn::make('pilgrim.name_en')->label('Name')->searchable()
                     ->description(fn (BookingPilgrim $record): string => $record->booking->customer->name.' · '.$record->booking->reference.($record->booking->status === Booking::DRAFT ? ' · draft' : '')),
-                TextColumn::make('flights')->label('Flights out / home')->state(fn (BookingPilgrim $record): string => $record->flightsLabel())->visibleFrom('md'),
+                TextColumn::make('group.name')->label('Group')->placeholder('—')
+                    ->description(fn (BookingPilgrim $record): string => $record->flightsLabel())->visibleFrom('md'),
                 TextColumn::make('busGroup.name')->label('Bus')->placeholder('—')->visibleFrom('sm'),
                 TextColumn::make('rooms')->label('Rooms')->state(fn (BookingPilgrim $record): string => $hotels->map(fn (TripHotel $h) => substr($h->cityLabel(), 0, 3).' '.($record->roomIn($h)?->label ?? '—'))->implode(' · '))->visibleFrom('md'),
                 TextColumn::make('visa_status')->label('Visa')->badge()->state(fn (BookingPilgrim $record): string => $record->visaLabel())
@@ -109,7 +111,7 @@ class TravellersRelationManager extends RelationManager
             ])
             ->defaultSort('id')
             ->filters([
-                SelectFilter::make('outbound_flight_id')->label('Flight out')->options(fn (): array => self::flightOptions($trip, TripFlight::OUTBOUND)),
+                SelectFilter::make('trip_group_id')->label('Group')->options(fn (): array => $trip->groups()->pluck('name', 'id')->all()),
                 SelectFilter::make('bus_group_id')->label('Bus')->options(fn (): array => $trip->busGroups()->pluck('name', 'id')->all()),
                 SelectFilter::make('visa_status')->label('Visa')->options(BookingPilgrim::VISA_STATUSES),
                 SelectFilter::make('status')->label('Booking')->options([Booking::CONFIRMED => 'Confirmed', Booking::DRAFT => 'Draft'])
@@ -127,26 +129,18 @@ class TravellersRelationManager extends RelationManager
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    BulkAction::make('flights')
-                        ->label('Put on flights')
+                    BulkAction::make('group')
+                        ->label('Put in a group')
                         ->icon('heroicon-o-paper-airplane')
-                        ->authorize($this->may('visa.update'))
-                        ->visible(fn (): bool => $trip->flights()->exists())
-                        ->schema([
-                            Select::make('outbound_flight_id')->label('Flight out')->native(false)->options(fn (): array => self::flightOptions($trip, TripFlight::OUTBOUND)),
-                            Select::make('return_flight_id')->label('Flight home')->native(false)->options(fn (): array => self::flightOptions($trip, TripFlight::RETURN)),
-                        ])
-                        ->action(function (Collection $records, array $data): void {
-                            $set = array_filter(['outbound_flight_id' => $data['outbound_flight_id'] ?? null, 'return_flight_id' => $data['return_flight_id'] ?? null]);
-
-                            if ($set === []) {
-                                Notification::make()->warning()->title('Choose a flight out, a flight home, or both')->send();
-
-                                return;
-                            }
-
-                            $records->each(fn (BookingPilgrim $bp) => $bp->forceFill($set)->save());
-                            Notification::make()->success()->title($records->count().' put on '.TripFlight::query()->whereKey(array_values($set))->get()->map->label()->implode(' and '))->send();
+                        ->authorize($this->may('bus.assign'))
+                        ->visible(fn (): bool => $trip->groups()->exists())
+                        ->schema([Select::make('trip_group_id')->label('Group')->required()->native(false)
+                            ->options(fn (): array => $trip->groups()->with(['outboundFlight', 'returnFlight'])->get()->mapWithKeys(fn (TripGroup $g): array => [$g->id => $g->name.' · '.$g->flightsLabel()])->all())])
+                        ->action(function (Collection $records, array $data, Groups $groups) use ($trip): void {
+                            $group = $trip->groups()->findOrFail($data['trip_group_id']);
+                            $result = $groups->assign($group, $records->pluck('id')->all());
+                            Notification::make()->success()->title($result['assigned'].' put in '.$group->name)
+                                ->body(trim(($result['offBus'] > 0 ? $result['offBus'].' came off a bus of their old group. ' : '').implode(' ', $result['skipped'])) ?: null)->send();
                         })
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('bus')
@@ -284,12 +278,5 @@ class TravellersRelationManager extends RelationManager
     private function may(string $permission): \Closure
     {
         return fn (): bool => (bool) Filament::auth()->user()?->can($permission);
-    }
-
-    /** @return array<int, string> */
-    private static function flightOptions(Trip $trip, string $direction): array
-    {
-        return $trip->flights()->where('direction', $direction)->orderBy('departs_at')->get()
-            ->mapWithKeys(fn (TripFlight $f): array => [$f->id => $f->describe()])->all();
     }
 }

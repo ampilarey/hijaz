@@ -111,7 +111,7 @@ class TelegramActionsTest extends TestCase
         $this->assertSame(Payment::SUCCEEDED, $payment->fresh()->status);
         $this->assertTrue($payment->fresh()->reviewer->is($finance));
         $this->assertSame(1000000, $booking->fresh()->paidIn('MVR')->minor);
-        $this->assertStringContainsString('verified</b> by '.$finance->name, collect($this->calls())->last(fn (array $c): bool => $c['method'] === 'editMessageText')['body']['text']);
+        $this->assertStringContainsString('verified</b> by '.e($finance->name), collect($this->calls())->last(fn (array $c): bool => $c['method'] === 'editMessageText')['body']['text']);
 
         $this->tap(13, 700, 'pay.verify.yes:'.$payment->id);
         $this->assertTrue(collect($this->calls())->contains(fn (array $c): bool => $c['method'] === 'answerCallbackQuery' && str_contains($c['body']['text'] ?? '', 'no longer waiting')));

@@ -46,7 +46,14 @@ final class Buses
                     continue;
                 }
 
-                $bp->forceFill(['bus_group_id' => $bus->getKey()])->save();
+                // A bus carries one group; someone already in another group stays off it.
+                if ($bus->trip_group_id !== null && $bp->trip_group_id !== null && $bp->trip_group_id !== $bus->trip_group_id) {
+                    $skipped[] = $bp->pilgrim->name_en.': in '.($bp->group?->name ?? 'another group').', not '.($bus->group?->name ?? 'this bus\'s group');
+
+                    continue;
+                }
+
+                $bp->forceFill(array_filter(['bus_group_id' => $bus->getKey(), 'trip_group_id' => $bus->trip_group_id ?? $bp->trip_group_id]))->save();
                 $assigned++;
             }
 

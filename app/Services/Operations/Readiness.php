@@ -68,7 +68,7 @@ final class Readiness
     {
         return BookingPilgrim::query()
             ->whereIn('booking_id', Booking::query()->where('trip_id', $trip->getKey())->where('status', Booking::CONFIRMED)->select('id'))
-            ->with(['pilgrim.documents', 'booking.customer', 'booking.trip.flights', 'busGroup', 'outboundFlight', 'returnFlight'])
+            ->with(['pilgrim.documents', 'booking.customer', 'booking.trip.flights', 'busGroup', 'outboundFlight', 'returnFlight', 'group.outboundFlight', 'group.returnFlight'])
             ->get();
     }
 
@@ -189,7 +189,7 @@ final class Readiness
         $out = [];
 
         foreach ([TripFlight::OUTBOUND => ['flightOut', 'out'], TripFlight::RETURN => ['flightBack', 'home']] as $direction => [$method, $word]) {
-            if ($trip->flights()->where('direction', $direction)->count() < 2) {
+            if ($trip->flights()->where('direction', $direction)->count() < 2 && $trip->groups()->count() < 2) {
                 continue;
             }
 
@@ -199,7 +199,7 @@ final class Readiness
                 $out[] = [
                     'area' => 'flights', 'severity' => self::BLOCKING,
                     'headline' => $none->count() === 1 ? "One traveller is on no flight {$word}" : $none->count()." travellers are on no flight {$word}",
-                    'detail' => $none->map(fn ($bp) => $bp->pilgrim->name_en)->implode(', ').'. Select them under Travellers and use Put on flights.',
+                    'detail' => $none->map(fn ($bp) => $bp->pilgrim->name_en)->implode(', ').'. Select them under Travellers and use Put in a group.',
                     'count' => $none->count(), 'url' => null,
                 ];
             }

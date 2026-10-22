@@ -39,7 +39,8 @@ class TripLists extends Page
         return [
             'trip' => $trip,
             'presets' => Lists::PRESETS,
-            'buses' => $trip->busGroups()->withCount('members')->get(),
+            'groups' => $trip->groups()->with(['outboundFlight', 'returnFlight'])->withCount('members')->get(),
+            'buses' => $trip->busGroups()->with('group')->withCount('members')->get(),
             'hotels' => $trip->hotels()->orderBy('check_in_on')->withCount('rooms')->get(),
             'excursions' => $trip->excursions()->get(),
             'canPrintCards' => (bool) Filament::auth()->user()?->can('card.create'),

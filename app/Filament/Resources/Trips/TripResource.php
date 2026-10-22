@@ -13,6 +13,7 @@ use App\Filament\Resources\Trips\RelationManagers\ChecklistRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\CostsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\ExcursionsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\FlightsRelationManager;
+use App\Filament\Resources\Trips\RelationManagers\GroupsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\HotelsRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\PriceTiersRelationManager;
 use App\Filament\Resources\Trips\RelationManagers\RollCallsRelationManager;
@@ -54,6 +55,7 @@ class TripResource extends Resource
     {
         return [
             TravellersRelationManager::class,
+            GroupsRelationManager::class,
             BusesRelationManager::class,
             RoomsRelationManager::class,
             RollCallsRelationManager::class,

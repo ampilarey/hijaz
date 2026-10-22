@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class BusGroup extends Model
 {
     /** @var list<string> */
-    protected $fillable = ['trip_id', 'name', 'capacity', 'leader_user_id', 'leader_name', 'leader_phone', 'colour', 'sort_order', 'notes'];
+    protected $fillable = ['trip_id', 'trip_group_id', 'name', 'capacity', 'leader_user_id', 'leader_name', 'leader_phone', 'colour', 'sort_order', 'notes'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -29,6 +29,12 @@ class BusGroup extends Model
     }
 
     /** @return BelongsTo<Trip, $this> */
+    /** @return BelongsTo<TripGroup, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(TripGroup::class, 'trip_group_id');
+    }
+
     public function trip(): BelongsTo
     {
         return $this->belongsTo(Trip::class);

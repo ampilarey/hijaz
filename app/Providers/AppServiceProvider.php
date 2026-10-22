@@ -34,6 +34,7 @@ use App\Models\Trip;
 use App\Models\TripCost;
 use App\Models\TripExcursion;
 use App\Models\TripFlight;
+use App\Models\TripGroup;
 use App\Models\TripHotel;
 use App\Models\UsdAllocation;
 use App\Models\User;
@@ -102,6 +103,7 @@ class AppServiceProvider extends ServiceProvider
         ExcursionBooking::class,
         ExcursionParticipant::class,
         BusGroup::class,
+        TripGroup::class,
         Room::class,
         RoomAssignment::class,
         Card::class,

@@ -40,7 +40,7 @@ class BookingPilgrim extends Model
     ];
 
     /** @var list<string> */
-    protected $fillable = ['booking_id', 'pilgrim_id', 'occupancy', 'pax_type', 'price_tier_id', 'amount_minor', 'currency', 'is_lead', 'ticket_number', 'seat_number', 'visa_status', 'visa_number', 'visa_agent', 'visa_submitted_on', 'visa_issued_on', 'bus_group_id', 'outbound_flight_id', 'return_flight_id'];
+    protected $fillable = ['booking_id', 'pilgrim_id', 'occupancy', 'pax_type', 'price_tier_id', 'amount_minor', 'currency', 'is_lead', 'ticket_number', 'seat_number', 'visa_status', 'visa_number', 'visa_agent', 'visa_submitted_on', 'visa_issued_on', 'bus_group_id', 'trip_group_id', 'outbound_flight_id', 'return_flight_id'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -89,16 +89,22 @@ class BookingPilgrim extends Model
         return $this->belongsTo(TripFlight::class, 'return_flight_id');
     }
 
-    /** The flight out: the one they were put on, or the trip's only outbound flight. */
+    /** @return BelongsTo<TripGroup, $this> */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(TripGroup::class, 'trip_group_id');
+    }
+
+    /** The flight out: their group's, else one set on them alone, else the trip's only outbound flight. */
     public function flightOut(): ?TripFlight
     {
-        return $this->outboundFlight ?? $this->booking->trip->onlyFlight(TripFlight::OUTBOUND);
+        return $this->group?->outboundFlight ?? $this->outboundFlight ?? $this->booking->trip->onlyFlight(TripFlight::OUTBOUND);
     }
 
     /** The flight home, the same way. */
     public function flightBack(): ?TripFlight
     {
-        return $this->returnFlight ?? $this->booking->trip->onlyFlight(TripFlight::RETURN);
+        return $this->group?->returnFlight ?? $this->returnFlight ?? $this->booking->trip->onlyFlight(TripFlight::RETURN);
     }
 
     /** When this traveller leaves: their own flight's day, else the trip's departure date. */

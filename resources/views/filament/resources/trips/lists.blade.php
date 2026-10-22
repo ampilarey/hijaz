@@ -27,11 +27,26 @@
         </div>
     </x-filament::section>
 
+    @if ($groups->isNotEmpty())
+        <x-filament::section>
+            <x-slot name="heading">Group lists</x-slot>
+            <x-slot name="description">Each group flies on its own flights; the airline gets one list per flight.</x-slot>
+            @foreach ($groups as $group)
+                <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:.5rem;">
+                    <span style="min-width:14rem;">{{ $group->name }} · {{ $group->members_count }} people · {{ $group->flightsLabel() }}</span>
+                    {!! $link(route('lists.manifest', ['trip' => $trip, 'preset' => 'airline', 'group' => $group->id]), 'Airline list PDF', 'primary') !!}
+                    {!! $link(route('lists.manifest', ['trip' => $trip, 'preset' => 'office', 'group' => $group->id]), 'Office list PDF') !!}
+                </div>
+            @endforeach
+        </x-filament::section>
+    @endif
+
     <x-filament::section>
         <x-slot name="heading">Bus lists</x-slot>
         @forelse ($buses as $bus)
             <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:.5rem;">
-                <span style="min-width:14rem;">{{ $bus->name }} · {{ $bus->members_count }} on board{{ $bus->leaderLabel() ? ' · '.$bus->leaderLabel() : '' }}</span>
+                <span style="display:inline-block;width:.75rem;height:.75rem;border-radius:9999px;background:{{ $bus->colour ?: '#a8a29e' }}"></span>
+                <span style="min-width:14rem;">{{ $bus->group ? $bus->group->name.' · ' : '' }}{{ $bus->name }} · {{ $bus->members_count }} on board{{ $bus->leaderLabel() ? ' · '.$bus->leaderLabel() : '' }}</span>
                 {!! $link(route('lists.bus', $bus), 'Bus list PDF', 'primary') !!}
                 @if ($canPrintCards && $bus->members_count > 0)
                     {!! $link(route('lists.cards', ['kind' => 'luggage', 'bus' => $bus->id]), 'Luggage tags') !!}

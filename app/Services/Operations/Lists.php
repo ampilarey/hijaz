@@ -10,6 +10,7 @@ use App\Models\ExcursionBooking;
 use App\Models\Pilgrim;
 use App\Models\Trip;
 use App\Models\TripExcursion;
+use App\Models\TripGroup;
 use App\Models\TripHotel;
 use App\Services\Invoices\Documents;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -33,16 +34,20 @@ final class Lists
 
     public function __construct(private readonly Documents $documents) {}
 
-    public function manifest(Trip $trip, string $preset = 'office', ?Collection $only = null): ListDocument
+    public function manifest(Trip $trip, string $preset = 'office', ?Collection $only = null, ?TripGroup $group = null): ListDocument
     {
         $travellers = $only ?? $this->travellers($trip);
+
+        if ($group !== null) {
+            $travellers = $travellers->where('trip_group_id', $group->getKey());
+        }
         $hotels = $trip->hotels()->orderBy('check_in_on')->get();
 
         $columns = match ($preset) {
-            'airline' => ['n' => '#', 'name' => 'Name as on passport', 'passport' => 'Passport no', 'nationality' => 'Nat.', 'dob' => 'Date of birth', 'gender' => 'Sex', 'expiry' => 'Expiry', 'flight' => 'Flight', 'ticket' => 'Ticket', 'seat' => 'Seat'],
+            'airline' => ['n' => '#', 'name' => 'Name as on passport', 'passport' => 'Passport no', 'nationality' => 'Nat.', 'dob' => 'Date of birth', 'gender' => 'Sex', 'expiry' => 'Expiry', 'group' => 'Group', 'flight' => 'Flight', 'ticket' => 'Ticket', 'seat' => 'Seat'],
             'hotel' => ['n' => '#', 'name' => 'Name', 'gender' => 'Sex', 'passport' => 'Passport no', 'nationality' => 'Nat.', ...$hotels->mapWithKeys(fn (TripHotel $h) => ['room_'.$h->id => $h->cityLabel().' room'])->all()],
             'ministry' => ['n' => '#', 'name' => 'Name', 'id_number' => 'ID number', 'passport' => 'Passport no', 'dob' => 'Date of birth', 'gender' => 'Sex', 'island' => 'Island', 'phone' => 'Phone'],
-            default => ['n' => '#', 'name' => 'Name', 'id_number' => 'ID no', 'passport' => 'Passport', 'expiry' => 'Expiry', 'dob' => 'DOB', 'gender' => 'Sex', 'phone' => 'Phone', 'family' => 'Family', 'booking' => 'Booking', 'bus' => 'Bus', ...$hotels->mapWithKeys(fn (TripHotel $h) => ['room_'.$h->id => $h->cityLabel()])->all(), 'flight' => 'Flights', 'visa' => 'Visa', 'ticket' => 'Ticket', 'paid' => 'Paid'],
+            default => ['n' => '#', 'name' => 'Name', 'id_number' => 'ID no', 'passport' => 'Passport', 'expiry' => 'Expiry', 'dob' => 'DOB', 'gender' => 'Sex', 'phone' => 'Phone', 'family' => 'Family', 'booking' => 'Booking', 'group' => 'Group', 'bus' => 'Bus', ...$hotels->mapWithKeys(fn (TripHotel $h) => ['room_'.$h->id => $h->cityLabel()])->all(), 'flight' => 'Flights', 'visa' => 'Visa', 'ticket' => 'Ticket', 'paid' => 'Paid'],
         };
 
         $rows = [];
@@ -53,12 +58,12 @@ final class Lists
 
         return new ListDocument(
             title: (self::PRESETS[$preset] ?? 'List'),
-            subtitle: $trip->name.' · '.$trip->code.' · '.$trip->datesLabel().' · '.count($rows).' travellers',
+            subtitle: $trip->name.' · '.$trip->code.' · '.($group ? $group->name.' · '.$group->flightsLabel() : $trip->datesLabel()).' · '.count($rows).' travellers',
             columns: $columns,
             rows: $rows,
             landscape: count($columns) > 7,
             notes: $preset === 'office' ? ['Draft bookings are marked *. Paid shows the balance due in each currency.'] : [],
-            filename: strtolower($trip->code).'-'.$preset.'-list',
+            filename: strtolower($trip->code).($group ? '-'.str($group->name)->slug() : '').'-'.$preset.'-list',
         );
     }
 
@@ -231,7 +236,7 @@ final class Lists
     {
         return BookingPilgrim::query()
             ->whereIn('booking_id', Booking::query()->where('trip_id', $trip->getKey())->live()->select('id'))
-            ->with(['pilgrim.island', 'pilgrim.documents.versions', 'booking.customer', 'booking.trip.flights', 'busGroup', 'roomAssignments.room', 'outboundFlight', 'returnFlight'])
+            ->with(['pilgrim.island', 'pilgrim.documents.versions', 'booking.customer', 'booking.trip.flights', 'busGroup', 'roomAssignments.room', 'outboundFlight', 'returnFlight', 'group.outboundFlight', 'group.returnFlight'])
             ->get()
             ->sortBy(fn (BookingPilgrim $bp) => ($bp->booking->status === Booking::CONFIRMED ? '0' : '1').$bp->booking->customer->name.' '.$bp->pilgrim->name_en)
             ->values();
@@ -259,6 +264,7 @@ final class Lists
             'island' => $p->island?->label ?? '',
             'family' => $b->customer->name,
             'booking' => $b->reference,
+            'group' => $bp->group?->name ?? '',
             'bus' => $bp->busGroup?->name ?? '',
             'visa' => $bp->visaLabel(),
             'flight' => $bp->flightsLabel(),
