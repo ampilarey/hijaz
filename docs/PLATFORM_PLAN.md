@@ -17,6 +17,7 @@ moves onto it later, as one of its companies.
 | 3 | Telegram | Each company has its own bot |
 | 4 | Pilot | Any company may be the first |
 | 5 | Order | The platform is built first. Hijaz joins later |
+| 6 | Hosting | Start on cPanel shared hosting. Move to a VPS when it grows |
 
 ## Words used here
 
@@ -29,8 +30,8 @@ moves onto it later, as one of its companies.
 ## What "platform first, Hijaz later" means for the build
 
 **The platform is a new project, started from a copy of the Hijaz code.**
-It gets its own repository, its own server and its own database, which
-starts empty.
+It gets its own repository, its own cPanel account (or its own folder and
+database on the existing one) and its own database, which starts empty.
 
 - The live Hijaz app is not touched. It stays on its current hosting, from
   its current repository, until the day it moves.
@@ -111,18 +112,23 @@ not to, rather than promising something technical that is not so.
 | Backups | Whole database | Whole database, plus a per-company export so one company can be restored alone |
 | Scheduled jobs | Run once | Run for every company, each in its own context |
 | Audit trail | One trail | Per company; the owner panel has its own |
-| Deploy | cPanel, pull from `main` | VPS, with a real queue worker and wildcard SSL |
+| Deploy | cPanel, pull from `main` | The same on cPanel to start; a VPS when it grows (see Hosting) |
 
 ## Phases
 
 Each phase ends with something that runs. Hijaz is untouched until its move.
 
-### Phase 0: the new project and its server
+### Phase 0: the new project and its hosting
 - New repository copied from the Hijaz code; Hijaz names taken out of code,
   comments and commands (`hijaz:backup` and the like).
-- VPS with daily off-site backups, a queue worker, wildcard SSL for
-  `*.rihla.mv`, monitoring and uptime alerts; CI and deploy set up afresh.
-- **Done when**: the copied app runs on the new server with an empty
+- cPanel hosting, set up the way Hijaz's is: deploy by pull from `main`,
+  jobs from cron, backup before every migration. CI and deploy set up afresh.
+- Company addresses: a wildcard subdomain (`*.rihla.mv`) if the host
+  allows it with SSL; otherwise each company's subdomain is added by hand
+  in cPanel when the company is added (a few minutes each).
+- A copy of each backup sent off the server daily, since the platform
+  holds other companies' records.
+- **Done when**: the copied app runs on the hosting with an empty
   database, at a test address.
 
 ### Phase 1: companies and the walls (largest)
@@ -179,6 +185,29 @@ Each phase ends with something that runs. Hijaz is untouched until its move.
 - **Done when**: Hijaz staff and customers work on the platform at the
   same address, and the old app is off.
 
+## Hosting: cPanel now, a VPS when it grows
+
+The platform is written so the move needs no code change: jobs run from
+cron or from a worker alike, and nothing depends on the host's layout.
+
+**What cPanel means while it lasts**
+- Background work (alerts, slip reading, PDFs) runs once a minute from
+  cron, for all companies in turn. Fine for a few companies.
+- Memory and time limits are shared, so heavy work is kept in small jobs.
+- If the host has no wildcard SSL, each company's address is added by hand.
+
+**Move to a VPS when any one of these happens**
+- A third company is added, or about 300 pilgrims are active in a season.
+- Alerts or slip readings regularly arrive more than a few minutes late.
+- The host warns about, or cuts off for, memory or processing limits.
+- A company asks for its own domain, or adding addresses by hand becomes
+  a chore.
+
+**The move itself**: a VPS with a queue worker, wildcard SSL, daily
+off-site backups and monitoring; database and files copied across in a
+short planned stop; addresses pointed at the new server. Roughly $10 to
+$25 a month, plus someone to look after the server.
+
 ## Risks and how to meet them
 
 | Risk | Answer |
@@ -190,6 +219,7 @@ Each phase ends with something that runs. Hijaz is untouched until its move.
 | Competitors distrust a platform whose owner also runs Hijaz | Rihla as the neutral name; written data agreement; owner panel shows no company data; export at any time |
 | One company's data must be restored alone | Per-company exports alongside the whole-database backup |
 | A company's Telegram bot token leaks | Stored encrypted, never shown again after entry, replaceable from settings |
+| Shared hosting slows or limits the platform | Small jobs, daily off-site backups, and the written triggers above for moving to a VPS |
 | Support load | Guided setup, a help section, a support channel; priced into the plans |
 
 ## Rough size
@@ -199,13 +229,14 @@ approved.
 
 | Step | Relative effort |
 |---|---|
-| 0: new project and server | Small to medium; mostly setup |
+| 0: new project and hosting | Small; the cPanel setup already exists for Hijaz |
 | 1: companies and the walls | Largest: touches nearly every query, PDF, job and test |
 | 2: brand, settings, bots | Medium to large |
 | 3: owner panel | Medium |
 | Pilot | No code; the owner's time |
 | 4: billing | Small to medium |
 | Hijaz moves in | Medium: the import tool and its rehearsals |
+| Move to a VPS, when triggered | Small in code; setup and a rehearsed switch |
 
 ## Open questions for the owner
 
@@ -213,6 +244,7 @@ approved.
    live Hijaz app stays as it is until it moves?
 2. Addresses: `company.rihla.mv` and `app.rihla.mv`?
 3. Should company pages say "Powered by Rihla" anywhere?
-4. Who provides and pays for the VPS, and is `rihla.mv` DNS under the
-   owner's control for the wildcard certificate?
+4. Does the current host allow a wildcard subdomain with SSL for
+   `*.rihla.mv`, and will the platform share Hijaz's cPanel account or
+   have its own?
 5. Roughly when should Hijaz move: before or after its next season?
