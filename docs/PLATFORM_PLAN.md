@@ -1,5 +1,9 @@
 # Plan: the Rihla platform for Umrah companies
 
+> **Superseded.** The owner decided to build this inside Rihla, not as a
+> separate project. The current plan is `docs/UMRAH_COMPANIES_PLAN.md` in
+> the `ampilarey/rihla` repository. This file is kept for its reasoning.
+
 **Status: plan only. Nothing here is built.** The Hijaz app keeps running
 exactly as it does today.
 
